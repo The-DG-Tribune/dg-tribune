@@ -1,0 +1,115 @@
+rules_version = '2';
+
+// DG Tribune — Firestore Security Rules
+// Document 04/09: public read access to published content, only the
+// single authenticated administrator can write. There is only ever
+// one admin account, so "signed in" == "is the administrator."
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Publicly readable content collections.
+    match /articles/{docId} {
+      allow read: if resource.data.status == "published" && resource.data.isDeleted == false;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount']);
+      allow read, write: if request.auth != null;
+    }
+
+    match /shortUpdates/{docId} {
+      allow read: if resource.data.status == "published" && resource.data.isDeleted == false;
+      allow read, write: if request.auth != null;
+    }
+
+    match /players/{docId} {
+      allow read: if resource.data.isDeleted == false;
+      allow read, write: if request.auth != null;
+    }
+
+    match /teams/{docId} {
+      allow read: if resource.data.isDeleted == false;
+      allow read, write: if request.auth != null;
+    }
+
+    match /leagues/{docId} {
+      allow read: if resource.data.isDeleted == false;
+      allow read, write: if request.auth != null;
+    }
+
+    match /categories/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /wallpapers/{docId} {
+      allow read: if resource.data.status == "published" && resource.data.isDeleted == false;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloadCount']);
+      allow read, write: if request.auth != null;
+    }
+
+    match /quizzes/{docId} {
+      allow read: if resource.data.status == "published" && resource.data.isDeleted == false;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['playCount']);
+      allow read, write: if request.auth != null;
+    }
+
+    match /tools/{docId} {
+      allow read: if resource.data.isEnabled == true;
+      allow read, write: if request.auth != null;
+    }
+
+    match /homepage/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /siteSettings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /legalPages/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /tags/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /featured/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /searchIndex/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Public contact form — anyone can submit a message, only the
+    // administrator can read or manage submissions.
+    match /contactMessages/{docId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // Admin-only collections — never publicly readable.
+    match /media/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /analytics/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /admins/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Default deny for anything not explicitly listed above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
