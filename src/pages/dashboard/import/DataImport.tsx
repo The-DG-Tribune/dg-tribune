@@ -778,7 +778,7 @@ async function updatePlayerStats(
   for (let i = 0; i < updates.length; i++) {
     const update = updates[i];
     try {
-      const existing = await getDocumentBySlug<{ id: string }>("players", update.slug);
+      const existing = await getDocumentBySlug<{ id: string; createdAt?: number }>("players", update.slug);
       if (!existing) {
         setLog((prev) =>
           prev.map((e, idx) =>
@@ -1873,7 +1873,7 @@ function getCommonsFileUrl(filename: string, width = 320): string {
     setIsImporting(true);
     setLog(() => teams.map((t) => ({ name: t.name, status: "pending" })));
 
-    const league = await getDocumentBySlug<{ id: string }>("leagues", leagueSlug);
+    const league = await getDocumentBySlug<{ id: string; createdAt?: number }>("leagues", leagueSlug);
 
     for (let i = 0; i < teams.length; i++) {
       const team = teams[i];
@@ -1940,7 +1940,7 @@ function getCommonsFileUrl(filename: string, width = 320): string {
       if (!teamCache.has(slug)) {
         teamCache.set(
           slug,
-          await getDocumentBySlug<{ id: string; name: string }>("teams", slug)
+          await getDocumentBySlug<{ id: string; name: string; createdAt?: number }>("teams", slug)
         );
       }
       return teamCache.get(slug) ?? null;
