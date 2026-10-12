@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -165,9 +164,6 @@ export default function PlayerEditor() {
         Back to Players
       </Link>
 
-      <Badge variant="accent" className="mb-3">
-        Phase 6 · Players
-      </Badge>
       <h1 className="font-heading text-page-title text-text mb-6">
         {isEditMode ? "Edit Player" : "Add Player"}
       </h1>

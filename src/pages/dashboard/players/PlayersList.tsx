@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -71,9 +70,6 @@ export default function PlayersList() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <Badge variant="accent" className="mb-3">
-            Phase 6 · CMS Modules
-          </Badge>
           <h1 className="font-heading text-page-title text-text">Players</h1>
         </div>
         <Button onClick={() => navigate(ROUTES.dashboardPlayerNew)}>

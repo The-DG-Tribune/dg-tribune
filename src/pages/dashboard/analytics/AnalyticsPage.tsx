@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { FileText, Download, Play, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/cards/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -73,14 +72,11 @@ export default function AnalyticsPage() {
   return (
     <div>
       <div className="mb-6">
-        <Badge variant="accent" className="mb-3">
-          Phase 6 · CMS Modules
-        </Badge>
         <h1 className="font-heading text-page-title text-text">Analytics</h1>
         <p className="text-small text-text-secondary mt-1">
           Real counts from your content - article views, wallpaper
           downloads, and quiz plays increase automatically as visitors use
-          the public site (built starting Phase 7).
+          the site.
         </p>
       </div>
 

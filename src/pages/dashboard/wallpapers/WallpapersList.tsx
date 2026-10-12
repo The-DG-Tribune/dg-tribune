@@ -146,9 +146,6 @@ export default function WallpapersList() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <Badge variant="accent" className="mb-3">
-            Phase 6 · CMS Modules
-          </Badge>
           <h1 className="font-heading text-page-title text-text">Wallpapers</h1>
         </div>
         <Button onClick={openCreateModal}>

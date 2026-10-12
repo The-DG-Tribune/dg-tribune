@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { Category, Wallpaper } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 interface WallpapersGridViewProps {
   wallpapers: Wallpaper[];
@@ -79,8 +80,8 @@ export function WallpapersGridView({
                 key={wallpaper.id}
                 className="group relative mb-4 break-inside-avoid overflow-hidden rounded-card border border-white/10 bg-white/[0.04]"
               >
-                <img
-                  src={wallpaper.thumbnailUrl || wallpaper.imageUrl}
+                <img loading="lazy" decoding="async"
+                  src={getThumbnailUrl(wallpaper.thumbnailUrl || wallpaper.imageUrl, 500)}
                   alt={wallpaper.title}
                   className="block w-full h-auto object-contain transition-transform duration-[400ms] ease-out group-hover:scale-105"
                 />

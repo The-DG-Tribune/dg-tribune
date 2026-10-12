@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { League, Team } from "@/types/firestore";
 import { cn } from "@/lib/cn";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 export default function LeaguePredictor() {
   const [leagues, setLeagues] = useState<League[] | null>(null);
@@ -106,7 +107,7 @@ export default function LeaguePredictor() {
                   <GripVertical className="h-4 w-4 text-text-secondary shrink-0" />
                   <span className="w-6 text-center text-small font-semibold text-text-secondary">{index + 1}</span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-button bg-background p-1">
-                    {team.logoUrl && <img src={team.logoUrl} alt="" className="h-full w-full object-contain" />}
+                    {team.logoUrl && <img loading="lazy" decoding="async" src={getThumbnailUrl(team.logoUrl, 120)} alt="" className="h-full w-full object-contain" />}
                   </div>
                   <span className="flex-1 truncate text-small text-text">{team.name}</span>
                   <div className="flex gap-1 shrink-0">
@@ -139,7 +140,7 @@ export default function LeaguePredictor() {
                 return (
                   <div key={team.id} className="flex flex-1 flex-col items-center justify-end gap-2 transition-all duration-500 ease-out">
                     <div className="flex h-8 w-8 items-center justify-center rounded-button bg-background p-1">
-                      {team.logoUrl && <img src={team.logoUrl} alt="" className="h-full w-full object-contain" />}
+                      {team.logoUrl && <img loading="lazy" decoding="async" src={getThumbnailUrl(team.logoUrl, 120)} alt="" className="h-full w-full object-contain" />}
                     </div>
                     <p className="text-caption text-text text-center truncate w-full">{team.name}</p>
                     <div className={cn("w-full rounded-t-md flex items-start justify-center pt-1 text-caption font-bold transition-all duration-500 ease-out", height, place === 1 ? "bg-accent text-background" : "bg-border text-text-secondary")}>

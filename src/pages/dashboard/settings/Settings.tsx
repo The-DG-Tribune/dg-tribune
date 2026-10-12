@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -93,13 +92,9 @@ export default function Settings() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <Badge variant="accent" className="mb-3">
-          Phase 6 · CMS Modules
-        </Badge>
         <h1 className="font-heading text-page-title text-text">Settings</h1>
         <p className="text-small text-text-secondary mt-1">
-          Site-wide configuration - used across the public site once Phase 7
-          builds the real header and footer.
+          Site-wide settings used across the public site: header, footer, social links and SEO.
         </p>
       </div>
 

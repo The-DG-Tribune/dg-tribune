@@ -27,6 +27,7 @@ import { getCollectionDocs } from "@/services/firebase/firestore";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/cn";
 import type { Article, ShortUpdate } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 type Tab = "for-you" | "trending";
 
@@ -91,7 +92,7 @@ export default function HotTakesPage() {
           ],
         }),
         getCollectionDocs<Article>("articles", {
-          where: [["isDeleted", "==", false]],
+          where: [["isDeleted", "==", false], ["status", "==", "published"]],
         }),
       ]);
       updateDocs.sort((a, b) => b.createdAt - a.createdAt);
@@ -247,8 +248,8 @@ export default function HotTakesPage() {
                                 onClick={() => setLightboxUrl(update.imageUrl)}
                                 className="mt-3 block w-full cursor-zoom-in overflow-hidden rounded-image border border-white/10"
                               >
-                                <img
-                                  src={update.imageUrl}
+                                <img loading="lazy" decoding="async"
+                                  src={getThumbnailUrl(update.imageUrl, 900)}
                                   alt=""
                                   className="max-h-80 w-full object-cover object-top"
                                 />
@@ -261,8 +262,8 @@ export default function HotTakesPage() {
                                 className="mt-3 flex items-center gap-3 rounded-card border border-white/10 bg-white/[0.03] p-3 transition-colors duration-button hover:border-accent/30"
                               >
                                 {article.coverImageUrl && (
-                                  <img
-                                    src={article.coverImageUrl}
+                                  <img loading="lazy" decoding="async"
+                                    src={getThumbnailUrl(article.coverImageUrl, 900)}
                                     alt=""
                                     className="h-12 w-12 shrink-0 rounded-button object-cover object-top"
                                   />

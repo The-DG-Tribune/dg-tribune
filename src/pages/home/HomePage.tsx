@@ -26,7 +26,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { TOOL_ICONS } from "@/constants/toolIcons";
 import { ROUTES } from "@/constants/routes";
 import { getThumbnailUrl } from "@/services/cloudinary/upload";
-import { getCollectionDocs, getDocumentById } from "@/services/firebase/firestore";
+import { getCollectionCount, getCollectionDocs, getDocumentById } from "@/services/firebase/firestore";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 import type {
   Article,
@@ -99,7 +99,7 @@ export default function HomePage() {
           getCollectionDocs<League>("leagues", {
             where: [["isDeleted", "==", false]],
           }),
-          getCollectionDocs<Player>("players", {
+          getCollectionCount("players", {
             where: [
               ["isDeleted", "==", false],
               ["status", "==", "published"],
@@ -122,7 +122,7 @@ export default function HomePage() {
         wallpapers,
         quizzes,
         leagues,
-        playerCount: players.length,
+        playerCount: players,
         teamCount: teams.length,
       });
     } catch (err) {
@@ -227,8 +227,8 @@ export default function HomePage() {
                 <Link to={ROUTES.article(featuredArticle.slug)} className="block h-full group">
                   <GlassCard glow className="h-full min-h-[320px] md:min-h-[420px]">
                     {featuredArticle.coverImageUrl && (
-                      <img
-                        src={featuredArticle.coverImageUrl}
+                      <img loading="eager" decoding="async"
+                        src={getThumbnailUrl(featuredArticle.coverImageUrl, 900)}
                         alt=""
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-105"
                       />
@@ -519,7 +519,7 @@ export default function HomePage() {
                         >
                           <GlassCard className="flex items-center gap-3 px-4 py-3 transition-transform duration-card group-hover:-translate-y-0.5">
                             {league.logoUrl ? (
-                              <img src={league.logoUrl} alt="" className="h-8 w-8 object-contain" />
+                              <img loading="lazy" decoding="async" src={getThumbnailUrl(league.logoUrl, 120)} alt="" className="h-8 w-8 object-contain" />
                             ) : (
                               <Trophy className="h-6 w-6 text-accent" />
                             )}
@@ -565,7 +565,7 @@ export default function HomePage() {
                       >
                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/10 to-accent-secondary/10">
                           {previewStack.map((wallpaper, i) => (
-                            <img
+                            <img loading="lazy" decoding="async"
                               key={wallpaper.id}
                               src={getThumbnailUrl(wallpaper.thumbnailUrl || wallpaper.imageUrl, 200)}
                               alt=""
@@ -597,7 +597,7 @@ export default function HomePage() {
                             to={ROUTES.wallpapers}
                             className="group relative aspect-[9/16] overflow-hidden rounded-card border border-white/10 bg-white/[0.04]"
                           >
-                            <img
+                            <img loading="lazy" decoding="async"
                               src={getThumbnailUrl(wallpaper.thumbnailUrl || wallpaper.imageUrl, 300)}
                               alt=""
                               className="h-full w-full object-cover transition-transform duration-card group-hover:scale-105"

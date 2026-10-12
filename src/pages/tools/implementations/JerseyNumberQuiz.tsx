@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { Player } from "@/types/firestore";
 import { cn } from "@/lib/cn";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
@@ -99,8 +100,8 @@ export default function JerseyNumberQuiz() {
       <Card className="p-6 mb-4 text-center">
         <div className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full bg-background">
           {round.player.photoUrl && (
-            <img
-              src={round.player.photoUrl}
+            <img loading="lazy" decoding="async"
+              src={getThumbnailUrl(round.player.photoUrl, 480)}
               alt=""
               className="h-full w-full object-cover object-top"
             />

@@ -3,6 +3,7 @@ import { Card, CardImage, CardBody } from "@/components/cards/Card";
 import { QuizCoverArt } from "@/components/quiz/QuizCoverArt";
 import { ROUTES } from "@/constants/routes";
 import type { League, Player, Quiz, Team } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 export function PlayerCard({ player }: { player: Player }) {
   return (
@@ -13,8 +14,8 @@ export function PlayerCard({ player }: { player: Player }) {
          * wide landscape box crops badly (cuts off the head/sides). */}
         <div className="aspect-[3/4] w-full overflow-hidden bg-surface">
           {player.photoUrl && (
-            <img
-              src={player.photoUrl}
+            <img loading="lazy" decoding="async"
+              src={getThumbnailUrl(player.photoUrl, 480)}
               alt=""
               className="h-full w-full object-cover object-top"
             />
@@ -40,7 +41,7 @@ export function TeamCard({ team }: { team: Team }) {
       <Card interactive>
         <CardImage className="flex items-center justify-center bg-background p-6">
           {team.logoUrl && (
-            <img src={team.logoUrl} alt="" className="h-full w-full object-contain" />
+            <img loading="lazy" decoding="async" src={getThumbnailUrl(team.logoUrl, 120)} alt="" className="h-full w-full object-contain" />
           )}
         </CardImage>
         <CardBody>
@@ -62,7 +63,7 @@ export function LeagueCard({ league }: { league: League }) {
       <Card interactive>
         <CardImage className="flex items-center justify-center bg-background p-6">
           {league.logoUrl && (
-            <img src={league.logoUrl} alt="" className="h-full w-full object-contain" />
+            <img loading="lazy" decoding="async" src={getThumbnailUrl(league.logoUrl, 120)} alt="" className="h-full w-full object-contain" />
           )}
         </CardImage>
         <CardBody>

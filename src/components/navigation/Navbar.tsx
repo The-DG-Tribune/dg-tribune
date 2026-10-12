@@ -30,11 +30,12 @@ export function Navbar() {
 
   return (
     <header
+      style={{ WebkitBackdropFilter: "blur(18px)", backdropFilter: "blur(18px)" }}
       className={cn(
         "sticky top-0 z-30 border-b transition-all duration-300",
         isScrolled
-          ? "border-white/10 bg-background/80 backdrop-blur-xl shadow-glass"
-          : "border-transparent bg-background/40 backdrop-blur-md"
+          ? "border-white/10 bg-background/95 backdrop-blur-xl shadow-glass"
+          : "border-transparent bg-background/85 backdrop-blur-md"
       )}
     >
       <Container>

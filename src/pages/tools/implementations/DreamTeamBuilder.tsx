@@ -10,6 +10,7 @@ import { FORMATIONS, FORMATION_OPTIONS } from "@/constants/formations";
 import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { Player } from "@/types/firestore";
 import { cn } from "@/lib/cn";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 export default function DreamTeamBuilder() {
   const [players, setPlayers] = useState<Player[] | null>(null);
@@ -123,8 +124,8 @@ export default function DreamTeamBuilder() {
                   )}
                 >
                   {player?.photoUrl ? (
-                    <img
-                      src={player.photoUrl}
+                    <img loading="lazy" decoding="async"
+                      src={getThumbnailUrl(player.photoUrl, 480)}
                       alt=""
                       className="h-full w-full object-cover object-top"
                     />
@@ -186,7 +187,7 @@ export default function DreamTeamBuilder() {
               >
                 <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-background">
                   {player.photoUrl && (
-                    <img src={player.photoUrl} alt="" className="h-full w-full object-cover object-top" />
+                    <img loading="lazy" decoding="async" src={getThumbnailUrl(player.photoUrl, 480)} alt="" className="h-full w-full object-cover object-top" />
                   )}
                 </div>
                 <span className="text-small text-text">{player.name}</span>

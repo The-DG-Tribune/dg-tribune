@@ -16,6 +16,7 @@ import {
   getCollectionDocs,
 } from "@/services/firebase/firestore";
 import type { Player, Team } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 function calculateAge(dateOfBirth: string): number | null {
   if (!dateOfBirth) return null;
@@ -134,7 +135,7 @@ export default function PlayerProfilePage() {
               <div className="relative flex flex-col sm:flex-row items-center sm:items-end gap-6 p-6 sm:p-8">
                 <div className="h-36 w-36 sm:h-44 sm:w-44 shrink-0 overflow-hidden rounded-image border-2 border-white/10 bg-surface shadow-glass">
                   {player.photoUrl && (
-                    <img src={player.photoUrl} alt="" className="h-full w-full object-cover object-top" />
+                    <img loading="lazy" decoding="async" src={getThumbnailUrl(player.photoUrl, 480)} alt="" className="h-full w-full object-cover object-top" />
                   )}
                 </div>
                 <div className="text-center sm:text-left">
@@ -143,7 +144,7 @@ export default function PlayerProfilePage() {
                       to={ROUTES.team(team.slug)}
                       className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-caption font-medium text-text-secondary transition-colors duration-button hover:text-text"
                     >
-                      {team.logoUrl && <img src={team.logoUrl} alt="" className="h-4 w-4 object-contain" />}
+                      {team.logoUrl && <img loading="lazy" decoding="async" src={getThumbnailUrl(team.logoUrl, 120)} alt="" className="h-4 w-4 object-contain" />}
                       {team.name}
                     </Link>
                   )}

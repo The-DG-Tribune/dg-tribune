@@ -154,8 +154,10 @@ export function getBlurredImageUrl(url: string, blurAmount: number): string {
   return url.replace("/upload/", `/upload/e_blur:${blurAmount}/`);
 }
 
-export function getThumbnailUrl(url: string, width = 400): string {
-  if (!url.includes("/upload/")) return url;
+export function getThumbnailUrl(url: string | null | undefined, width = 400): string {
+  if (!url) return "";
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) return url;
+  if (/\/upload\/[a-z]_/.test(url)) return url;
   return url.replace("/upload/", `/upload/f_auto,q_auto,w_${width}/`);
 }
 

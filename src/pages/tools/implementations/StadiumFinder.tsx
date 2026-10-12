@@ -9,6 +9,7 @@ import { ROUTES } from "@/constants/routes";
 import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { Team } from "@/types/firestore";
 import { cn } from "@/lib/cn";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 export default function StadiumFinder() {
   const [teams, setTeams] = useState<Team[] | null>(null);
@@ -48,7 +49,7 @@ export default function StadiumFinder() {
             {teamsWithStadiums.map((team) => (
               <button key={team.id} type="button" onClick={() => setSelectedId(team.id)} className={cn("flex items-center gap-3 rounded-card border p-4 text-left transition-colors duration-button", selectedId === team.id ? "border-accent bg-accent/5" : "border-border bg-surface hover:border-accent/50")}>
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-button bg-background p-1.5">
-                  {team.logoUrl && <img src={team.logoUrl} alt="" className="h-full w-full object-contain" />}
+                  {team.logoUrl && <img loading="lazy" decoding="async" src={getThumbnailUrl(team.logoUrl, 120)} alt="" className="h-full w-full object-contain" />}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-body text-text">{team.stadium}</p>
@@ -70,7 +71,7 @@ export default function StadiumFinder() {
           ) : (
             <div>
               <div className="flex h-16 w-16 items-center justify-center rounded-card bg-background p-2 mb-4">
-                {selected.logoUrl && <img src={selected.logoUrl} alt="" className="h-full w-full object-contain" />}
+                {selected.logoUrl && <img loading="lazy" decoding="async" src={getThumbnailUrl(selected.logoUrl, 120)} alt="" className="h-full w-full object-contain" />}
               </div>
               <h3 className="font-heading text-card-title text-text mb-1">{selected.stadium}</h3>
               <p className="text-small text-text-secondary mb-4">Home of {selected.name}</p>

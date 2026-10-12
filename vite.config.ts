@@ -11,6 +11,17 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          firebase: ["firebase/app", "firebase/auth", "firebase/firestore"],
+          motion: ["framer-motion"],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
   },

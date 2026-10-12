@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -150,9 +149,6 @@ export default function ArticleEditor() {
         Back to Articles
       </Link>
 
-      <Badge variant="accent" className="mb-3">
-        Phase 6 · Write Article
-      </Badge>
       <h1 className="font-heading text-page-title text-text mb-6">
         {isEditMode ? "Edit Article" : "New Article"}
       </h1>

@@ -104,6 +104,17 @@ export async function getCollectionCount(
  * every public detail page (article, player, team, league) is
  * reached via a slug URL, so this is the standard lookup for them.
  */
+const PUBLIC_FILTERS: Record<string, [string, "==", unknown][]> = {
+  articles: [["status", "==", "published"], ["isDeleted", "==", false]],
+  shortUpdates: [["status", "==", "published"], ["isDeleted", "==", false]],
+  quizzes: [["status", "==", "published"], ["isDeleted", "==", false]],
+  wallpapers: [["status", "==", "published"], ["isDeleted", "==", false]],
+  players: [["isDeleted", "==", false]],
+  teams: [["isDeleted", "==", false]],
+  leagues: [["isDeleted", "==", false]],
+  tools: [["isEnabled", "==", true]],
+};
+
 export async function getDocumentBySlug<T extends { createdAt?: number }>(
   collectionName: string,
   slug: string
@@ -118,7 +129,7 @@ export async function getDocumentBySlug<T extends { createdAt?: number }>(
     // still resolves deterministically to the OLDEST one instead of
     // whichever one Firestore happens to return first.
     const results = await getCollectionDocs<T>(collectionName, {
-      where: [["slug", "==", slug]],
+      where: [["slug", "==", slug], ...(PUBLIC_FILTERS[collectionName] ?? [])],
       limit: 5,
     });
     if (results.length === 0) return null;

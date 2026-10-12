@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import {
   FileText,
   Users,
@@ -7,8 +7,12 @@ import {
   Trophy,
   Image as ImageIcon,
   HelpCircle,
+  Flame,
+  Plus,
+  Download,
+  LayoutDashboard,
 } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { ROUTES } from "@/constants/routes";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { AnalyticsCard } from "@/components/dashboard/AnalyticsCard";
@@ -23,6 +27,7 @@ interface Counts {
   leagues: number;
   wallpapers: number;
   quizzes: number;
+  hotTakes: number;
 }
 
 const CARD_CONFIG: {
@@ -47,6 +52,12 @@ const CARD_CONFIG: {
   },
   { key: "wallpapers", label: "Wallpapers", icon: ImageIcon },
   {
+    key: "hotTakes",
+    label: "Hot Takes",
+    icon: Flame,
+    accentClassName: "bg-warning/10 text-warning",
+  },
+  {
     key: "quizzes",
     label: "Quizzes",
     icon: HelpCircle,
@@ -64,7 +75,7 @@ export default function DashboardHome() {
     setError(null);
     setCounts(null);
     try {
-      const [articles, players, teams, leagues, wallpapers, quizzes] =
+      const [articles, players, teams, leagues, wallpapers, quizzes, hotTakes] =
         await Promise.all([
           getCollectionCount("articles", { where: [["isDeleted", "==", false]] }),
           getCollectionCount("players", { where: [["isDeleted", "==", false]] }),
@@ -72,8 +83,9 @@ export default function DashboardHome() {
           getCollectionCount("leagues", { where: [["isDeleted", "==", false]] }),
           getCollectionCount("wallpapers", { where: [["isDeleted", "==", false]] }),
           getCollectionCount("quizzes", { where: [["isDeleted", "==", false]] }),
+          getCollectionCount("shortUpdates", { where: [["isDeleted", "==", false]] }),
         ]);
-      setCounts({ articles, players, teams, leagues, wallpapers, quizzes });
+      setCounts({ articles, players, teams, leagues, wallpapers, quizzes, hotTakes });
     } catch (err) {
       setError((err as Error).message);
     }
@@ -89,9 +101,6 @@ export default function DashboardHome() {
   return (
     <div>
       <div className="mb-6">
-        <Badge variant="accent" className="mb-3">
-          Phase 5 · CMS Foundation
-        </Badge>
         <h1 className="font-heading text-page-title text-text">
           Welcome back, {firstName}
         </h1>
@@ -103,7 +112,7 @@ export default function DashboardHome() {
       {searchValue ? (
         <EmptyState
           title={`No results for "${searchValue}"`}
-          description="Full site-wide search (articles, players, teams, and more) is built in Phase 11. This bar will search live content once it exists."
+          description="Try a different word, or use the sidebar to open a section directly."
         />
       ) : error ? (
         <ErrorState description={error} onRetry={loadCounts} />
@@ -121,11 +130,35 @@ export default function DashboardHome() {
         </div>
       )}
 
+      {!searchValue && (
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { to: ROUTES.dashboardArticleNew, label: "New article", icon: Plus },
+            { to: ROUTES.dashboardShortUpdates, label: "Hot Takes", icon: Flame },
+            { to: ROUTES.dashboardWallpaperNew, label: "Add wallpaper", icon: ImageIcon },
+            { to: "/dashboard/import", label: "Import content", icon: Download },
+            { to: ROUTES.dashboardHomepage, label: "Edit homepage", icon: LayoutDashboard },
+            { to: ROUTES.dashboardQuizNew, label: "New quiz", icon: HelpCircle },
+            { to: ROUTES.dashboardPlayerNew, label: "Add player", icon: Users },
+            { to: ROUTES.dashboardTeamNew, label: "Add team", icon: Shield },
+          ].map((a) => (
+            <Link
+              key={a.label}
+              to={a.to}
+              className="flex items-center gap-2 rounded-container border border-white/10 bg-white/[0.04] px-3 py-3 text-small font-medium text-text transition-colors hover:border-accent/40 hover:text-accent"
+            >
+              <a.icon className="h-4 w-4 shrink-0" />
+              {a.label}
+            </Link>
+          ))}
+        </div>
+      )}
+
       {counts && Object.values(counts).every((c) => c === 0) && !searchValue && (
         <div className="mt-6">
           <EmptyState
             title="Nothing published yet"
-            description="Your content modules (articles, players, teams, and more) are built in Phase 6. Once they're live, this dashboard will reflect real numbers."
+            description="Use the Import tool to load leagues, teams, players and quizzes in a few clicks, or add content by hand from the sidebar."
           />
         </div>
       )}

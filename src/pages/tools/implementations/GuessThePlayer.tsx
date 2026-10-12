@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { Player } from "@/types/firestore";
 import { cn } from "@/lib/cn";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
@@ -87,8 +88,8 @@ export default function GuessThePlayer() {
 
       <Card className="mb-4 overflow-hidden">
         <div className="aspect-square w-full bg-background">
-          <img
-            src={round.player.photoUrl}
+          <img loading="lazy" decoding="async"
+            src={getThumbnailUrl(round.player.photoUrl, 480)}
             alt=""
             className="h-full w-full object-cover object-top"
           />

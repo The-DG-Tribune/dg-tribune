@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Trash2, ImageIcon, Copy } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -61,9 +60,6 @@ export default function MediaLibrary() {
   return (
     <div>
       <div className="mb-6">
-        <Badge variant="accent" className="mb-3">
-          Phase 6 · CMS Modules
-        </Badge>
         <h1 className="font-heading text-page-title text-text">Photos</h1>
         <p className="text-small text-text-secondary mt-1">
           Every image uploaded anywhere in the CMS shows up here

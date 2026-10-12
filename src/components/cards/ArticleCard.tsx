@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ROUTES } from "@/constants/routes";
 import { formatDate } from "@/utils/formatDate";
 import type { Article, Category } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 interface ArticleCardProps {
   article: Article;
@@ -17,8 +18,8 @@ export function ArticleCard({ article, category }: ArticleCardProps) {
       <Card interactive>
         <CardImage>
           {article.coverImageUrl ? (
-            <img
-              src={article.coverImageUrl}
+            <img loading="lazy" decoding="async"
+              src={getThumbnailUrl(article.coverImageUrl, 900)}
               alt=""
               className="h-full w-full object-cover"
             />

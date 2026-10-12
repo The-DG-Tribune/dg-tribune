@@ -8,7 +8,6 @@ import {
   LayoutTemplate,
   Save,
 } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -153,15 +152,11 @@ export default function HomepageManager() {
     <div className="max-w-2xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <Badge variant="accent" className="mb-3">
-            Phase 6 · CMS Modules
-          </Badge>
           <h1 className="font-heading text-page-title text-text">
             Homepage Manager
           </h1>
           <p className="text-small text-text-secondary mt-1">
-            Arrange the sections that appear on the homepage - built in
-            Phase 7. "Automatic" sections pull live content on their own;
+            Arrange the sections that appear on the homepage. "Automatic" sections pull live content on their own;
             "manually chosen" sections use the articles you pick here.
           </p>
         </div>

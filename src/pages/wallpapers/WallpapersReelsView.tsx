@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { Category, Wallpaper } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 interface WallpapersReelsViewProps {
   wallpapers: Wallpaper[];
@@ -64,14 +65,14 @@ export function WallpapersReelsView({
                * backdrop just fills the space behind it, the way
                * Instagram Stories/Spotify handle mismatched aspect
                * media. */}
-              <img
-                src={wallpaper.imageUrl}
+              <img loading="lazy" decoding="async"
+                src={getThumbnailUrl(wallpaper.imageUrl, 900)}
                 alt=""
                 aria-hidden="true"
                 className="absolute inset-0 h-full w-full scale-110 object-cover object-top opacity-50 blur-2xl"
               />
-              <img
-                src={wallpaper.imageUrl}
+              <img loading="lazy" decoding="async"
+                src={getThumbnailUrl(wallpaper.imageUrl, 900)}
                 alt={wallpaper.title}
                 className="relative z-[1] max-h-full max-w-full object-contain"
               />

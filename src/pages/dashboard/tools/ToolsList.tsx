@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, Wrench } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -164,14 +163,9 @@ export default function ToolsList() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <Badge variant="accent" className="mb-3">
-            Phase 6 · CMS Modules
-          </Badge>
           <h1 className="font-heading text-page-title text-text">Tools</h1>
           <p className="text-small text-text-secondary mt-1">
-            Manage which interactive tools appear on the site. The tools
-            themselves are built one at a time in Phase 9 - this registry
-            controls their name, icon, order, and visibility.
+            Control which interactive tools appear on the site, plus their name, icon, order and visibility.
           </p>
         </div>
         <Button onClick={openCreateModal}>

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getCollectionDocs, getDocumentById } from "@/services/firebase/firestore";
 import type { Player, Team } from "@/types/firestore";
 import { formatDate } from "@/utils/formatDate";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 interface TimelineEvent {
   icon: typeof Cake;
@@ -141,7 +142,7 @@ export default function CareerTimeline() {
             <div className="relative flex items-center gap-4 p-5">
               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-image border-2 border-white/10 bg-surface">
                 {player.photoUrl && (
-                  <img src={player.photoUrl} alt="" className="h-full w-full object-cover object-top" />
+                  <img loading="lazy" decoding="async" src={getThumbnailUrl(player.photoUrl, 480)} alt="" className="h-full w-full object-cover object-top" />
                 )}
               </div>
               <div className="min-w-0">

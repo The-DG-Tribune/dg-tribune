@@ -18,6 +18,7 @@ import {
   incrementField,
 } from "@/services/firebase/firestore";
 import type { Article, Category } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 export default function ArticlePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -146,8 +147,8 @@ export default function ArticlePage() {
       {/* Hero image with overlaid title */}
       {article.coverImageUrl ? (
         <div className="relative w-full aspect-[16/8] md:aspect-[16/6] bg-surface overflow-hidden">
-          <img
-            src={article.coverImageUrl}
+          <img loading="eager" decoding="async"
+            src={getThumbnailUrl(article.coverImageUrl, 900)}
             alt=""
             className="h-full w-full object-cover"
           />

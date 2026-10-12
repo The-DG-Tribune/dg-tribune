@@ -112,9 +112,6 @@ export default function TrashPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <Badge variant="accent" className="mb-3">
-          Phase 6 · CMS Modules
-        </Badge>
         <h1 className="font-heading text-page-title text-text">Trash</h1>
         <p className="text-small text-text-secondary mt-1">
           Deleted items from every module land here. Restore them, or delete

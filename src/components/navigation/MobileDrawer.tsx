@@ -23,7 +23,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-background/90 backdrop-blur-sm md:hidden"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -32,7 +32,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 32 }}
-            className="fixed inset-y-0 right-0 z-50 w-[80%] max-w-xs border-l border-white/10 bg-background-secondary/95 p-6 backdrop-blur-xl md:hidden"
+            className="fixed inset-y-0 right-0 z-50 w-[80%] max-w-xs border-l border-white/10 bg-background-secondary p-6 backdrop-blur-xl md:hidden"
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"

@@ -4,8 +4,6 @@ import { ROUTES } from "@/constants/routes";
 import { PageLoadingFallback } from "@/components/ui/PageLoadingFallback";
 
 // Dev-only checkpoint screens (kept reachable for reference only)
-const Phase3Status = lazy(() => import("@/pages/home/Phase3Status"));
-const Phase2Showcase = lazy(() => import("@/pages/home/Phase2Showcase"));
 
 // Public site
 import { PublicLayout } from "@/layouts/PublicLayout";
@@ -103,23 +101,6 @@ export const router = createBrowserRouter(
       { path: ROUTES.disclaimer, element: <DisclaimerPage /> },
       { path: ROUTES.contact, element: <ContactPage /> },
     ],
-  },
-  {
-    // Kept reachable for reference - not real site routes.
-    path: "/dev/connections",
-    element: (
-      <Suspense fallback={<PageLoadingFallback />}>
-        <Phase3Status />
-      </Suspense>
-    ),
-  },
-  {
-    path: "/dev/components",
-    element: (
-      <Suspense fallback={<PageLoadingFallback />}>
-        <Phase2Showcase />
-      </Suspense>
-    ),
   },
   {
     path: ROUTES.adminLogin,

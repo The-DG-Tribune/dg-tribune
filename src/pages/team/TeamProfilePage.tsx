@@ -13,6 +13,7 @@ import {
   getCollectionDocs,
 } from "@/services/firebase/firestore";
 import type { League, Player, Team } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 export default function TeamProfilePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -86,7 +87,7 @@ export default function TeamProfilePage() {
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-10 max-w-3xl mx-auto">
           <div className="h-32 w-32 shrink-0 flex items-center justify-center rounded-card border border-border bg-surface p-4">
             {team.logoUrl && (
-              <img src={team.logoUrl} alt="" className="h-full w-full object-contain" />
+              <img loading="lazy" decoding="async" src={getThumbnailUrl(team.logoUrl, 120)} alt="" className="h-full w-full object-contain" />
             )}
           </div>
           <div className="text-center sm:text-left">

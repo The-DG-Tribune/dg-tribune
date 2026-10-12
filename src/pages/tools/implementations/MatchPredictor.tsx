@@ -7,6 +7,7 @@ import { Loader } from "@/components/ui/Loader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { Team } from "@/types/firestore";
+import { getThumbnailUrl } from "@/services/cloudinary/upload";
 
 function randomGoals(): number {
   const weights = [0.25, 0.32, 0.24, 0.13, 0.06];
@@ -23,7 +24,7 @@ function TeamBadge({ team, label }: { team?: Team; label: string }) {
   return (
     <div className="flex flex-1 flex-col items-center gap-3">
       <div className="flex h-20 w-20 items-center justify-center rounded-card border border-border bg-surface p-3">
-        {team?.logoUrl ? <img src={team.logoUrl} alt="" className="h-full w-full object-contain" /> : <Swords className="h-8 w-8 text-text-secondary" />}
+        {team?.logoUrl ? <img loading="lazy" decoding="async" src={getThumbnailUrl(team.logoUrl, 120)} alt="" className="h-full w-full object-contain" /> : <Swords className="h-8 w-8 text-text-secondary" />}
       </div>
       <p className="text-small text-text text-center truncate w-full">{team?.name ?? label}</p>
     </div>
