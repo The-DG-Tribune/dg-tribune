@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Eye, Share2 } from "lucide-react";
 import { Container } from "@/components/layout/Container";
+import { recordRecentArticle } from "@/utils/recentArticles";
 import { Badge } from "@/components/ui/Badge";
 import { Loader } from "@/components/ui/Loader";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -52,6 +53,7 @@ export default function ArticlePage() {
         return;
       }
       setArticle(found);
+      recordRecentArticle({ slug: found.slug, title: found.title, coverImageUrl: found.coverImageUrl });
       setCategories(allCategories);
       setCategory(allCategories.find((c) => c.id === found.categoryId) ?? null);
       setRelated(

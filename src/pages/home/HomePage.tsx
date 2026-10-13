@@ -13,6 +13,7 @@ import {
   Heart,
 } from "lucide-react";
 import { Container } from "@/components/layout/Container";
+import { ContinueReading } from "@/components/home/ContinueReading";
 import { ArticleCard } from "@/components/cards/ArticleCard";
 import { QuizCard } from "@/components/cards/EntityCards";
 import { Badge } from "@/components/ui/Badge";
@@ -336,6 +337,8 @@ export default function HomePage() {
               )}
             </motion.div>
           </motion.div>
+
+          <ContinueReading />
 
           {/* ---------------- Pulse ticker ---------------- */}
           {tickerItems.length > 0 && (

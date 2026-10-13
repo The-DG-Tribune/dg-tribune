@@ -79,6 +79,10 @@ export interface Wallpaper extends BaseDocument {
   categoryId: string | null;
   downloadCount: number;
   likeCount: number;
+  /** Pixel size and device type, filled in by Bulk Upload. Older wallpapers don't have these. */
+  width?: number;
+  height?: number;
+  orientation?: "phone" | "desktop" | "square";
 }
 
 export interface QuizQuestion {

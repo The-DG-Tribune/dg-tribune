@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { LayoutGrid, Play, Shuffle } from "lucide-react";
+import { Heart, LayoutGrid, Monitor, Play, Shuffle, Smartphone } from "lucide-react";
 import { Container } from "@/components/layout/Container";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -16,6 +16,7 @@ import { WallpaperLightbox } from "@/components/wallpapers/WallpaperLightbox";
 import type { Category, Wallpaper } from "@/types/firestore";
 
 type Tab = "grid" | "reels";
+type DeviceFilter = "all" | "phone" | "desktop" | "saved";
 
 export default function WallpapersPage() {
   const { showToast } = useToast();
@@ -37,6 +38,7 @@ export default function WallpapersPage() {
   const [activeCategoryId, setActiveCategoryId] = useState<string | "all">("all");
   const [error, setError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Wallpaper | null>(null);
+  const [deviceFilter, setDeviceFilter] = useState<DeviceFilter>("all");
 
   async function load() {
     setError(null);
@@ -103,17 +105,23 @@ export default function WallpapersPage() {
     if (result === "copied") showToast("Link copied");
   }
 
+  const hasDesktop = wallpapers?.some((w) => w.orientation === "desktop") ?? false;
   const filteredWallpapers =
-    wallpapers?.filter(
-      (w) => activeCategoryId === "all" || w.categoryId === activeCategoryId
-    ) ?? [];
+    wallpapers?.filter((w) => {
+      if (activeCategoryId !== "all" && w.categoryId !== activeCategoryId) return false;
+      if (deviceFilter === "saved") return isLiked(w.id);
+      if (deviceFilter === "desktop") return w.orientation === "desktop";
+      // Older wallpapers have no orientation and were all phone-sized.
+      if (deviceFilter === "phone") return w.orientation !== "desktop";
+      return true;
+    }) ?? [];
 
   // Deterministic-per-seed shuffle - re-runs whenever reelsShuffleSeed
   // changes (entering the tab, or the manual shuffle button), so the
   // feed doesn't always start on the same wallpaper.
   const reelsWallpapers = useMemo(() => {
     if (!wallpapers) return [];
-    const arr = [...wallpapers];
+    const arr = wallpapers.filter((w) => w.orientation !== "desktop");
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -171,6 +179,32 @@ export default function WallpapersPage() {
           </div>
         </div>
 
+        {tab === "grid" && wallpapers !== null && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {([
+              { id: "all", label: "All", icon: null },
+              { id: "phone", label: "Phone", icon: Smartphone },
+              ...(hasDesktop ? [{ id: "desktop", label: "Desktop", icon: Monitor }] : []),
+              { id: "saved", label: "Saved", icon: Heart },
+            ] as { id: DeviceFilter; label: string; icon: typeof Heart | null }[]).map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setDeviceFilter(f.id)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full border px-4 py-2 text-small font-medium transition-colors duration-button",
+                  deviceFilter === f.id
+                    ? "border-accent bg-accent/10 text-accent"
+                    : "border-white/10 bg-white/[0.04] text-text-secondary hover:text-text"
+                )}
+              >
+                {f.icon && <f.icon className="h-4 w-4" />}
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {error ? (
           <ErrorState description={error} onRetry={load} />
         ) : wallpapers === null ? (
@@ -203,6 +237,8 @@ export default function WallpapersPage() {
             onLike={handleLike}
             onDownload={handleDownload}
             onShare={handleShare}
+            onExit={() => setTab("grid")}
+            onShuffle={() => setReelsShuffleSeed(Date.now())}
           />
         )}
       </div>

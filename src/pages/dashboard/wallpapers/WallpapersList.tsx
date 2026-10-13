@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Pencil, Trash2, Download, Heart } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Heart, Images } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ImageUploader } from "@/components/dashboard/ImageUploader";
+import { BulkUpload } from "@/pages/dashboard/wallpapers/BulkUpload";
 import { useToast } from "@/context/ToastContext";
 import { useCategories } from "@/hooks/useCategories";
 import { getThumbnailUrl } from "@/services/cloudinary/upload";
@@ -34,6 +35,7 @@ export default function WallpapersList() {
   const [wallpapers, setWallpapers] = useState<Wallpaper[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Wallpaper | null>(null);
   const [title, setTitle] = useState("");
@@ -148,10 +150,16 @@ export default function WallpapersList() {
         <div>
           <h1 className="font-heading text-page-title text-text">Wallpapers</h1>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="h-4 w-4 mr-1.5" />
-          Upload Wallpaper
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => setIsBulkOpen(true)}>
+            <Images className="h-4 w-4 mr-1.5" />
+            Bulk Upload
+          </Button>
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            Upload Wallpaper
+          </Button>
+        </div>
       </div>
 
       {error ? (
@@ -188,9 +196,14 @@ export default function WallpapersList() {
                   {wallpaper.title}
                 </p>
                 <div className="mt-1 flex items-center justify-between">
-                  <Badge variant={wallpaper.status === "published" ? "accent" : "warning"}>
-                    {wallpaper.status}
-                  </Badge>
+                  <span className="flex items-center gap-1.5">
+                    <Badge variant={wallpaper.status === "published" ? "accent" : "warning"}>
+                      {wallpaper.status}
+                    </Badge>
+                    {wallpaper.orientation && wallpaper.orientation !== "phone" && (
+                      <Badge variant="info">{wallpaper.orientation}</Badge>
+                    )}
+                  </span>
                   <span className="inline-flex items-center gap-2 text-caption text-text-secondary">
                     <span className="inline-flex items-center gap-1">
                       <Heart className="h-3 w-3" />
@@ -312,6 +325,15 @@ export default function WallpapersList() {
         confirmLabel="Move to Trash"
         isDestructive
         isLoading={isDeleting}
+      />
+
+      <BulkUpload
+        isOpen={isBulkOpen}
+        onClose={() => setIsBulkOpen(false)}
+        onFinished={load}
+        categories={categories}
+        existingSlugs={(wallpapers ?? []).map((w) => w.slug)}
+        createCategory={createCategory}
       />
     </div>
   );

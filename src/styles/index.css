@@ -7,6 +7,17 @@
     scroll-behavior: smooth;
   }
 
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+  }
+
   body {
     @apply bg-background text-text font-body antialiased;
   }

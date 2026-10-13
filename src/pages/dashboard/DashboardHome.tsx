@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { NeedsAttention } from "@/pages/dashboard/NeedsAttention";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { AnalyticsCard } from "@/components/dashboard/AnalyticsCard";
@@ -135,7 +136,7 @@ export default function DashboardHome() {
           {[
             { to: ROUTES.dashboardArticleNew, label: "New article", icon: Plus },
             { to: ROUTES.dashboardShortUpdates, label: "Hot Takes", icon: Flame },
-            { to: ROUTES.dashboardWallpaperNew, label: "Add wallpaper", icon: ImageIcon },
+            { to: ROUTES.dashboardWallpapers, label: "Bulk upload wallpapers", icon: ImageIcon },
             { to: "/dashboard/import", label: "Import content", icon: Download },
             { to: ROUTES.dashboardHomepage, label: "Edit homepage", icon: LayoutDashboard },
             { to: ROUTES.dashboardQuizNew, label: "New quiz", icon: HelpCircle },
@@ -153,6 +154,8 @@ export default function DashboardHome() {
           ))}
         </div>
       )}
+
+      {!searchValue && <NeedsAttention />}
 
       {counts && Object.values(counts).every((c) => c === 0) && !searchValue && (
         <div className="mt-6">
