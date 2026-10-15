@@ -2,6 +2,7 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
+  sendPasswordResetEmail,
   setPersistence,
   browserLocalPersistence,
   type User,
@@ -41,6 +42,29 @@ export async function signIn(email: string, password: string): Promise<User> {
   } catch (err) {
     const code = (err as { code?: string }).code ?? "unknown";
     throw new Error(toFriendlyAuthError(code));
+  }
+}
+
+/**
+ * Sends Firebase's standard password-reset email. Always resolves the same way
+ * whether or not the address is registered, so it can't be used to find out
+ * which emails have accounts.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  try {
+    await sendPasswordResetEmail(auth, email.trim());
+  } catch (err) {
+    const code = (err as { code?: string }).code ?? "unknown";
+    if (code === "auth/network-request-failed") {
+      throw new Error("Network error. Check your connection and try again.");
+    }
+    if (code === "auth/too-many-requests") {
+      throw new Error("Too many attempts. Please wait a few minutes and try again.");
+    }
+    if (code === "auth/invalid-email") {
+      throw new Error("That email address doesn't look right.");
+    }
+    // Any other result (including user-not-found) is treated as sent.
   }
 }
 

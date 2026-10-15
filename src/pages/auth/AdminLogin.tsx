@@ -4,12 +4,12 @@ import { Lock } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
-import { signIn } from "@/services/firebase/auth";
+import { requestPasswordReset, signIn } from "@/services/firebase/auth";
 import { ROUTES } from "@/constants/routes";
 
 /**
  * Admin Login - Document 07. The ONLY entry point into the CMS.
- * There is no signup/register/forgot-password flow anywhere - this
+ * There is no signup/register flow anywhere - this
  * app has exactly one administrator account, created directly in the
  * Firebase console.
  */
@@ -22,6 +22,7 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Already signed in - skip straight to the dashboard.
   if (!isCheckingSession && isAuthenticated) {
@@ -38,6 +39,24 @@ export default function AdminLogin() {
     try {
       await signIn(email, password);
       navigate(ROUTES.dashboard, { replace: true });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleForgot() {
+    setError(null);
+    setNotice(null);
+    if (!email.trim()) {
+      setError("Type your admin email above first, then tap Forgot password.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await requestPasswordReset(email);
+      setNotice("If that email has an account, a reset link is on its way. Check your inbox and spam.");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -87,6 +106,12 @@ export default function AdminLogin() {
             </p>
           )}
 
+          {notice && (
+            <p className="text-small text-accent" role="status">
+              {notice}
+            </p>
+          )}
+
           <Button
             type="submit"
             variant="primary"
@@ -95,6 +120,14 @@ export default function AdminLogin() {
           >
             Sign in
           </Button>
+          <button
+            type="button"
+            onClick={handleForgot}
+            disabled={isSubmitting}
+            className="w-full text-center text-small text-text-secondary hover:text-accent disabled:opacity-50"
+          >
+            Forgot password?
+          </button>
         </form>
       </div>
     </div>
