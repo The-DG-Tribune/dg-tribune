@@ -46,6 +46,7 @@ const TeamEditor = lazy(() => import("@/pages/dashboard/teams/TeamEditor"));
 const LeaguesList = lazy(() => import("@/pages/dashboard/leagues/LeaguesList"));
 const LeagueEditor = lazy(() => import("@/pages/dashboard/leagues/LeagueEditor"));
 const WallpapersList = lazy(() => import("@/pages/dashboard/wallpapers/WallpapersList"));
+const CategoriesPage = lazy(() => import("@/pages/dashboard/categories/CategoriesPage"));
 const QuizzesList = lazy(() => import("@/pages/dashboard/quizzes/QuizzesList"));
 const QuizEditor = lazy(() => import("@/pages/dashboard/quizzes/QuizEditor"));
 const ToolsList = lazy(() => import("@/pages/dashboard/tools/ToolsList"));
@@ -133,6 +134,7 @@ export const router = createBrowserRouter(
       { path: "leagues/new", element: <LeagueEditor /> },
       { path: "leagues/:id/edit", element: <LeagueEditor /> },
       { path: "wallpapers", element: <WallpapersList /> },
+      { path: "categories", element: <CategoriesPage /> },
       { path: "quizzes", element: <QuizzesList /> },
       { path: "quizzes/new", element: <QuizEditor /> },
       { path: "quizzes/:id/edit", element: <QuizEditor /> },

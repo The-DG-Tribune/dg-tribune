@@ -1,8 +1,10 @@
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { NavLink } from "react-router-dom";
 import { X } from "lucide-react";
 import { NAV_ITEMS } from "@/constants/navigation";
 import { cn } from "@/lib/cn";
+import { Logo } from "@/components/brand/Logo";
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -14,7 +16,11 @@ interface MobileDrawerProps {
  * reveal, matching the rest of the site's frosted-glass language.
  */
 export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
-  return (
+  // Rendered straight into <body>. Inside the navbar, its frosted-glass
+  // effect trapped the "fixed" panel in the header strip, which is why the
+  // menu looked see-through and the links spilled over the page.
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -23,7 +29,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-[90] bg-black/80 md:hidden"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -32,13 +38,14 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 32 }}
-            className="fixed inset-y-0 right-0 z-50 w-[80%] max-w-xs border-l border-white/10 bg-background-secondary p-6 backdrop-blur-xl md:hidden"
+            style={{ backgroundColor: "#0B0F19" }}
+            className="fixed inset-y-0 right-0 z-[100] flex h-[100dvh] w-[84%] max-w-xs flex-col overflow-y-auto border-l border-white/10 p-6 pt-[max(1.5rem,env(safe-area-inset-top))] md:hidden"
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
           >
             <div className="mb-8 flex items-center justify-between">
-              <span className="font-heading text-card-title text-text">Menu</span>
+              <Logo />
               <button
                 type="button"
                 onClick={onClose}
@@ -84,6 +91,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

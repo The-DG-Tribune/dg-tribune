@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardMobileDrawer } from "@/components/dashboard/DashboardMobileDrawer";
 import { TopBar } from "@/components/dashboard/TopBar";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { PageLoadingFallback } from "@/components/ui/PageLoadingFallback";
 
 export interface DashboardOutletContext {
@@ -20,6 +21,7 @@ export function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ScrollToTop />
       <Sidebar />
       <DashboardMobileDrawer
         isOpen={isMobileNavOpen}

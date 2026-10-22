@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { Card } from "@/components/cards/Card";
 import { Loader } from "@/components/ui/Loader";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -31,6 +30,14 @@ export default function GuessThePlayer() {
   const [round, setRound] = useState<Round | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+
+  // Move on by itself a moment after an answer, no Next button needed.
+  useEffect(() => {
+    if (selected === null) return;
+    const t = setTimeout(() => nextRound(), 1100);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
   useEffect(() => {
     (async () => {
@@ -127,14 +134,6 @@ export default function GuessThePlayer() {
         })}
       </div>
 
-      {selected !== null && (
-        <div className="mt-4 flex justify-end">
-          <Button size="sm" onClick={nextRound}>
-            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-            Next
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

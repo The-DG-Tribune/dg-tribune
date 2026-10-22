@@ -1,3 +1,4 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { useEffect, useMemo, useState } from "react";
 import { Container } from "@/components/layout/Container";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -9,6 +10,10 @@ import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { Player } from "@/types/firestore";
 
 export default function PlayersPage() {
+  useDocumentHead({
+    title: "Football Players: Profiles, Stats & Photos",
+    description: "Browse football player profiles with position, nationality, club, stats and photos on DG Tribune.",
+  });
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");

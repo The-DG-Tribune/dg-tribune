@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, XCircle, Info, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { LogoMark } from "@/components/brand/Logo";
 
 type ToastVariant = "success" | "error" | "info";
 
@@ -70,8 +71,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.97 }}
                   transition={{ duration: 0.25 }}
-                  className="flex items-center gap-3 rounded-card border border-border bg-surface px-4 py-3 shadow-lg"
+                  className="relative flex items-center gap-3 overflow-hidden rounded-card border border-white/10 bg-surface px-4 py-3 pl-5 shadow-lg"
                 >
+                  <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-accent to-accent-secondary" />
+                  <LogoMark className="h-6 w-6" />
                   <Icon className={cn("h-5 w-5 shrink-0", className)} />
                   <p className="flex-1 text-small text-text">{toast.message}</p>
                   <button

@@ -1,3 +1,4 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -19,6 +20,10 @@ const fadeUp = {
 };
 
 export default function QuizzesPage() {
+  useDocumentHead({
+    title: "Football Quizzes",
+    description: "Test your football knowledge with quizzes on the World Cup, Premier League, Champions League, legends and records.",
+  });
   const [quizzes, setQuizzes] = useState<Quiz[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +106,7 @@ export default function QuizzesPage() {
                             {featured.title}
                           </h2>
                           <p className="text-small text-text-secondary max-w-md">
-                            {featured.questions.length} questions - {featured.description}
+                            {featured.description || "Test your football knowledge"}
                           </p>
                         </div>
                         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-background transition-transform duration-button group-hover:scale-110">

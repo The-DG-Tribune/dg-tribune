@@ -1,3 +1,4 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { useEffect, useMemo, useState } from "react";
 import { Container } from "@/components/layout/Container";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -9,6 +10,10 @@ import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { Team } from "@/types/firestore";
 
 export default function TeamsPage() {
+  useDocumentHead({
+    title: "Football Teams & Clubs",
+    description: "Explore football clubs from the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Liga Portugal and the Saudi Pro League.",
+  });
   const [teams, setTeams] = useState<Team[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");

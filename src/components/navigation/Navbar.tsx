@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search as SearchIcon, Menu } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 import { Container } from "@/components/layout/Container";
 import { MobileDrawer } from "@/components/navigation/MobileDrawer";
 import { NAV_ITEMS } from "@/constants/navigation";
@@ -45,14 +46,8 @@ export function Navbar() {
             isScrolled ? "h-14" : "h-16"
           )}
         >
-          <Link
-            to={ROUTES.home}
-            className="group font-heading text-card-title font-bold tracking-tight text-text"
-          >
-            <span className="transition-colors duration-button group-hover:text-white">DG</span>{" "}
-            <span className="bg-gradient-to-r from-accent to-accent-secondary bg-clip-text text-transparent">
-              Tribune
-            </span>
+          <Link to={ROUTES.home} className="group" aria-label="DG Tribune home">
+            <Logo />
           </Link>
 
           {/* Desktop nav */}

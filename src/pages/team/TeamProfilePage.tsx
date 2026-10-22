@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Container } from "@/components/layout/Container";
@@ -84,6 +85,13 @@ export default function TeamProfilePage() {
   return (
     <Container>
       <div className="py-10">
+        <Link
+          to={league ? ROUTES.league(league.slug) : ROUTES.teams}
+          className="mb-6 inline-flex items-center gap-1.5 text-small text-text-secondary transition-colors duration-button hover:text-text"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {league ? league.name : "All teams"}
+        </Link>
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-10 max-w-3xl mx-auto">
           <div className="h-32 w-32 shrink-0 flex items-center justify-center rounded-card border border-border bg-surface p-4">
             {team.logoUrl && (

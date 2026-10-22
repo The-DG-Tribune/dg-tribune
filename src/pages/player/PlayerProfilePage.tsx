@@ -198,7 +198,7 @@ export default function PlayerProfilePage() {
               className="mb-6"
             >
               <h2 className="font-heading text-section-title text-text mb-3">
-                Season stats
+                {player.statsLabel ? `${player.statsLabel} stats` : "Season stats"}
               </h2>
               <div className={cn("grid gap-3", isGoalkeeper ? "grid-cols-2" : "grid-cols-3")}>
                 {(isGoalkeeper
@@ -230,8 +230,8 @@ export default function PlayerProfilePage() {
             </GlassCard>
           )}
 
-          {/* Bio */}
-          {player.bio && (
+          {/* About + quick facts */}
+          {(player.about || player.bio) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -240,8 +240,82 @@ export default function PlayerProfilePage() {
               className="mb-6"
             >
               <GlassCard className="p-6">
-                <h2 className="font-heading text-card-title text-text mb-2">About</h2>
-                <p className="text-body text-text-secondary leading-relaxed">{player.bio}</p>
+                <h2 className="font-heading text-card-title text-text mb-3">About {player.name}</h2>
+                <div className="space-y-3">
+                  {(player.about || player.bio).split(/\n{2,}/).map((para, i) => (
+                    <p key={i} className="text-body leading-relaxed text-text-secondary">
+                      {para}
+                    </p>
+                  ))}
+                </div>
+                {(player.birthPlace || player.heightCm || player.international) && (
+                  <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-white/10 pt-4 sm:grid-cols-3">
+                    {player.birthPlace && (
+                      <div>
+                        <dt className="text-caption uppercase tracking-wide text-text-secondary">Born in</dt>
+                        <dd className="text-small text-text">{player.birthPlace}</dd>
+                      </div>
+                    )}
+                    {player.heightCm && (
+                      <div>
+                        <dt className="text-caption uppercase tracking-wide text-text-secondary">Height</dt>
+                        <dd className="text-small text-text">{(player.heightCm / 100).toFixed(2)} m</dd>
+                      </div>
+                    )}
+                    {player.international && (
+                      <div>
+                        <dt className="text-caption uppercase tracking-wide text-text-secondary">International</dt>
+                        <dd className="text-small text-text">
+                          {player.international.team}
+                          {player.international.caps !== undefined && `, ${player.international.caps} caps`}
+                          {player.international.goals !== undefined && `, ${player.international.goals} goals`}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+                {player.wikiUrl && (
+                  <p className="mt-4 text-caption text-text-secondary">
+                    Source: <a href={player.wikiUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">Wikipedia</a> (CC BY-SA)
+                  </p>
+                )}
+              </GlassCard>
+            </motion.div>
+          )}
+
+          {/* Career */}
+          {player.careerClubs && player.careerClubs.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ type: "spring", stiffness: 240, damping: 26 }}
+              className="mb-6"
+            >
+              <GlassCard className="p-6">
+                <h2 className="font-heading text-card-title text-text mb-3">Senior career</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[22rem] text-left text-small">
+                    <thead className="text-caption uppercase tracking-wide text-text-secondary">
+                      <tr>
+                        <th className="py-2 pr-3 font-medium">Club</th>
+                        <th className="py-2 pr-3 font-medium">Years</th>
+                        <th className="py-2 pr-3 text-right font-medium">Apps</th>
+                        <th className="py-2 text-right font-medium">Goals</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {player.careerClubs.map((c, i) => (
+                        <tr key={i} className="border-t border-white/5">
+                          <td className="py-2 pr-3 text-text">{c.club}</td>
+                          <td className="py-2 pr-3 text-text-secondary">{c.years}</td>
+                          <td className="py-2 pr-3 text-right text-text">{c.apps ?? "-"}</td>
+                          <td className="py-2 text-right text-text">{c.goals ?? "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </GlassCard>
             </motion.div>
           )}

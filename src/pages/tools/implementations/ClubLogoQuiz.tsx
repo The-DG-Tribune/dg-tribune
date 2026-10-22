@@ -42,6 +42,14 @@ export default function ClubLogoQuiz() {
   const [maxScore, setMaxScore] = useState(0);
   const [isOver, setIsOver] = useState(false);
 
+  // Move on by itself a moment after an answer, no Next button needed.
+  useEffect(() => {
+    if (selected === null) return;
+    const t = setTimeout(() => nextRound(), 1100);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
+
   useEffect(() => {
     (async () => {
       const data = await getCollectionDocs<Team>("teams", {
@@ -132,7 +140,7 @@ export default function ClubLogoQuiz() {
       ) : round ? (
         <div className="max-w-sm mx-auto">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-small text-text-secondary">Round {roundNumber}/{TOTAL_ROUNDS}</p>
+            <p className="text-small text-text-secondary">Round {roundNumber}</p>
             <p className="text-small font-semibold text-text">Score: {score}</p>
           </div>
 
@@ -176,11 +184,6 @@ export default function ClubLogoQuiz() {
             })}
           </div>
 
-          {selected !== null && (
-            <div className="mt-4 flex justify-end">
-              <Button size="sm" onClick={nextRound}>{roundNumber >= TOTAL_ROUNDS ? "See Results" : "Next"}</Button>
-            </div>
-          )}
         </div>
       ) : null}
     </div>

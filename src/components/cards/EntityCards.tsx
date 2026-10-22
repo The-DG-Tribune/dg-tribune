@@ -91,7 +91,7 @@ export function QuizCard({ quiz }: { quiz: Quiz }) {
             {quiz.title}
           </h3>
           <p className="text-small text-text-secondary truncate">
-            {quiz.questions?.length ?? 0} questions
+            Quick-fire quiz
             {quiz.playCount ? ` · ${quiz.playCount.toLocaleString()} played` : ""}
           </p>
         </CardBody>

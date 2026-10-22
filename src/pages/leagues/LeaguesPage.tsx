@@ -1,3 +1,4 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { useEffect, useState } from "react";
 import { Container } from "@/components/layout/Container";
 import { LeagueCard } from "@/components/cards/EntityCards";
@@ -8,6 +9,10 @@ import { getCollectionDocs } from "@/services/firebase/firestore";
 import type { League } from "@/types/firestore";
 
 export default function LeaguesPage() {
+  useDocumentHead({
+    title: "Football Leagues",
+    description: "Every major football league with its clubs, on DG Tribune.",
+  });
   const [leagues, setLeagues] = useState<League[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 

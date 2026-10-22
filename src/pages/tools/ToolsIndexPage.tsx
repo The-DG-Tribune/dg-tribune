@@ -1,3 +1,4 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -26,6 +27,10 @@ const fadeUp = {
 };
 
 export default function ToolsIndexPage() {
+  useDocumentHead({
+    title: "Football Tools: Dream Team Builder, Trivia & More",
+    description: "Free football tools: dream team builder, formation builder, trivia rush, club logo quiz, jersey number quiz and more.",
+  });
   const [tools, setTools] = useState<Tool[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 

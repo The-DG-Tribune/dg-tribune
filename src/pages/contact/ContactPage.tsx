@@ -1,18 +1,31 @@
-import { useState, type FormEvent } from "react";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
+import { useEffect, useState, type FormEvent } from "react";
 import { Mail, CheckCircle2 } from "lucide-react";
 import { Container } from "@/components/layout/Container";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
-import { createDocument } from "@/services/firebase/firestore";
+import { createDocument, getDocumentById } from "@/services/firebase/firestore";
+import type { SiteSettings } from "@/types/firestore";
 
 export default function ContactPage() {
+  useDocumentHead({
+    title: "Contact",
+    description: "Get in touch with DG Tribune with questions, tips, or feedback.",
+  });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackEmail, setFallbackEmail] = useState<string>("");
+
+  useEffect(() => {
+    getDocumentById<SiteSettings>("siteSettings", "settings")
+      .then((s) => setFallbackEmail(s?.contactEmail ?? ""))
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,7 +39,16 @@ export default function ContactPage() {
       });
       setIsSubmitted(true);
     } catch {
-      setError("We couldn't send your message right now. Please try again.");
+      // The message box is down (usually a database permission). Never lose
+      // the visitor's message: open their email app with everything filled in.
+      if (fallbackEmail) {
+        const subject = encodeURIComponent(`DG Tribune message from ${name.trim()}`);
+        const body = encodeURIComponent(`${message.trim()}\n\nFrom: ${name.trim()} (${email.trim()})`);
+        window.location.href = `mailto:${fallbackEmail}?subject=${subject}&body=${body}`;
+        setError("Our message box is busy, so we opened your email app. Just press send.");
+      } else {
+        setError("We couldn't send your message right now. Please try again in a moment.");
+      }
     } finally {
       setIsSubmitting(false);
     }

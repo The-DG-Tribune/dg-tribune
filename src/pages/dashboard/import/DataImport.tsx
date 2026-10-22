@@ -10,6 +10,7 @@ import {
   updateDocumentById,
 } from "@/services/firebase/firestore";
 import { slugify } from "@/utils/slugify";
+import { getTopScorers } from "@/services/footballAPI/client";
 
 /**
  * DATA IMPORT - a one-time admin tool, not a permanent CMS module.
@@ -767,6 +768,323 @@ async function fixBrokenSlugs(
   setIsRunning(false);
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Retry missing images, enrich players, sync league stats             */
+/* ------------------------------------------------------------------ */
+
+function firstTitle(t: string | string[]): string {
+  return Array.isArray(t) ? t[0] : t;
+}
+
+const ALL_PLAYER_SEEDS: PlayerSeed[] = [
+  ...PLAYERS_BATCH_1,
+  ...PLAYERS_BATCH_2,
+  ...PLAYERS_BATCH_3,
+  ...PLAYERS_BATCH_4,
+  ...PLAYERS_BATCH_5,
+  ...PLAYERS_BATCH_6,
+  ...PLAYERS_BATCH_7,
+  ...PLAYERS_BATCH_8,
+  ...PLAYERS_BATCH_9,
+];
+
+/** Finds every league, club and player saved with no picture and tries Wikipedia again. */
+async function retryMissingImages(
+  setLog: Dispatch<SetStateAction<LogEntry[]>>,
+  setBusy: Dispatch<SetStateAction<boolean>>
+) {
+  setBusy(true);
+  setLog([]);
+  const push = (entry: LogEntry) => setLog((prev) => [...prev, entry]);
+  const patch = (name: string, status: LogEntry["status"], message?: string) =>
+    setLog((prev) => prev.map((e) => (e.name === name ? { ...e, status, message } : e)));
+
+  type Row = { id: string; name: string; slug: string; logoUrl?: string; photoUrl?: string };
+  const groups: { collection: "leagues" | "teams" | "players"; field: "logoUrl" | "photoUrl"; titles: Map<string, string | string[]>; folder: string; photo: boolean }[] = [
+    { collection: "leagues", field: "logoUrl", titles: new Map(LEAGUES.map((l) => [slugify(l.name), l.wikiTitle])), folder: "dg-tribune/leagues", photo: false },
+    {
+      collection: "teams",
+      field: "logoUrl",
+      titles: new Map(
+        [
+          ...PREMIER_LEAGUE_TEAMS,
+          ...LA_LIGA_TEAMS,
+          ...BUNDESLIGA_TEAMS,
+          ...SERIE_A_TEAMS,
+          ...LIGUE_1_TEAMS,
+          ...LIGA_PORTUGAL_TEAMS,
+          ...SAUDI_PRO_LEAGUE_TEAMS,
+        ].map((t) => [slugify(t.name), t.wikiTitle])
+      ),
+      folder: "dg-tribune/teams",
+      photo: false,
+    },
+    { collection: "players", field: "photoUrl", titles: new Map(ALL_PLAYER_SEEDS.map((p) => [slugify(p.name), p.wikiTitle])), folder: "dg-tribune/players", photo: true },
+  ];
+
+  try {
+    for (const group of groups) {
+      const rows = await getCollectionDocs<Row>(group.collection, {});
+      const missing = rows.filter((r) => !r[group.field]);
+      for (const row of missing) {
+        const title = group.titles.get(row.slug);
+        const label = `${row.name} (${group.collection.slice(0, -1)})`;
+        push({ name: label, status: "pending" });
+        if (!title) {
+          patch(label, "error", "no Wikipedia title on file, add the image by hand in the editor");
+          continue;
+        }
+        try {
+          const uploaded = await importWikipediaImage(title, group.folder, group.photo);
+          await updateDocumentById(group.collection, row.id, { [group.field]: uploaded.url });
+          patch(label, "success", "image added");
+        } catch (err) {
+          patch(label, "error", (err as Error).message);
+        }
+        await delay(900);
+      }
+    }
+    if (setLogIsEmpty()) push({ name: "Nothing to fix", status: "skipped", message: "every league, club and player already has an image" });
+  } catch (err) {
+    push({ name: "Stopped", status: "error", message: (err as Error).message });
+  }
+  setBusy(false);
+
+  function setLogIsEmpty() {
+    let empty = true;
+    setLog((prev) => {
+      empty = prev.length === 0;
+      return prev;
+    });
+    return empty;
+  }
+}
+
+/* ---- Wikipedia infobox reading ---- */
+
+function wikiClean(value: string): string {
+  let t = value;
+  t = t.replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "").replace(/<ref[^>]*\/>/gi, "").replace(/<!--[\s\S]*?-->/g, "");
+  for (let i = 0; i < 4; i++) t = t.replace(/\{\{(?:nowrap|nobr)\|([^{}]*)\}\}/gi, "$1");
+  t = t.replace(/\{\{[^{}]*\}\}/g, "");
+  t = t.replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1");
+  t = t.replace(/'{2,}/g, "").replace(/<[^>]+>/g, "").replace(/→/g, "");
+  return t.replace(/\s+/g, " ").trim();
+}
+
+function infoField(text: string, key: string): string | null {
+  const m = new RegExp(`\\|\\s*${key}\\s*=\\s*([^\\n]*)`, "i").exec(text);
+  return m ? m[1].trim() : null;
+}
+
+interface WikiPlayerFacts {
+  about: string;
+  birthPlace?: string;
+  heightCm?: number;
+  careerClubs: { club: string; years: string; apps?: number; goals?: number }[];
+  international?: { team: string; caps?: number; goals?: number };
+}
+
+function toInt(v: string | null): number | undefined {
+  if (!v) return undefined;
+  const n = parseInt(wikiClean(v).replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+async function fetchWikiPlayerFacts(rawTitle: string): Promise<WikiPlayerFacts> {
+  const title = cleanTitle(rawTitle);
+  const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&redirects=1&prop=revisions%7Cextracts&rvprop=content&rvslots=main&exintro=1&explaintext=1&titles=${encodeURIComponent(
+    title
+  )}&origin=*`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Wikipedia request failed (${res.status})`);
+  const data = await res.json();
+  const page = data?.query?.pages?.[0];
+  if (!page || page.missing) throw new Error(`No Wikipedia page for "${title}"`);
+
+  const extract: string = (page.extract ?? "").trim();
+  const wikitext: string = page.revisions?.[0]?.slots?.main?.content ?? "";
+
+  // About: the opening paragraphs, trimmed to whole sentences, at most ~900 characters.
+  const paragraphs = extract.split(/\n+/).filter(Boolean).slice(0, 3);
+  let about = "";
+  for (const para of paragraphs) {
+    if ((about + " " + para).length > 900 && about) break;
+    about = about ? `${about}\n\n${para}` : para;
+  }
+  if (about.length > 900) {
+    const cut = about.slice(0, 900);
+    const lastStop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf(".\n"));
+    about = lastStop > 300 ? cut.slice(0, lastStop + 1) : cut;
+  }
+
+  const facts: WikiPlayerFacts = { about, careerClubs: [] };
+
+  const place = infoField(wikitext, "birth_place");
+  if (place) {
+    const cleaned = wikiClean(place);
+    if (cleaned) facts.birthPlace = cleaned;
+  }
+
+  const heightRaw = infoField(wikitext, "height");
+  if (heightRaw) {
+    const m = /m\s*=\s*([0-9.]+)/i.exec(heightRaw) ?? /([0-9]\.[0-9]{2})\s*m/i.exec(heightRaw);
+    if (m) {
+      const cm = Math.round(parseFloat(m[1]) * 100);
+      if (cm >= 140 && cm <= 230) facts.heightCm = cm;
+    }
+  }
+
+  for (let n = 1; n <= 25; n++) {
+    const clubRaw = infoField(wikitext, `clubs${n}`);
+    if (!clubRaw) continue;
+    const club = wikiClean(clubRaw);
+    if (!club) continue;
+    facts.careerClubs.push({
+      club,
+      years: wikiClean(infoField(wikitext, `years${n}`) ?? ""),
+      apps: toInt(infoField(wikitext, `caps${n}`)),
+      goals: toInt(infoField(wikitext, `goals${n}`)),
+    });
+  }
+
+  for (let n = 1; n <= 6; n++) {
+    const teamRaw = infoField(wikitext, `nationalteam${n}`);
+    if (!teamRaw) continue;
+    const team = wikiClean(teamRaw);
+    if (!team || /\bU-?\d{2}\b|Olympic|youth/i.test(team)) continue;
+    facts.international = {
+      team,
+      caps: toInt(infoField(wikitext, `nationalcaps${n}`)),
+      goals: toInt(infoField(wikitext, `nationalgoals${n}`)),
+    };
+    break;
+  }
+  return facts;
+}
+
+/** Adds a real About text, birthplace, height, career history and international record to every player. */
+async function enrichPlayers(
+  setLog: Dispatch<SetStateAction<LogEntry[]>>,
+  setBusy: Dispatch<SetStateAction<boolean>>
+) {
+  setBusy(true);
+  setLog([]);
+  const titles = new Map(ALL_PLAYER_SEEDS.map((p) => [slugify(p.name), firstTitle(p.wikiTitle)]));
+  type Row = { id: string; name: string; slug: string; about?: string };
+  let rows: Row[] = [];
+  try {
+    rows = await getCollectionDocs<Row>("players", {});
+  } catch (err) {
+    setLog([{ name: "Could not read players", status: "error", message: (err as Error).message }]);
+    setBusy(false);
+    return;
+  }
+  const todo = rows.filter((r) => !r.about);
+  setLog(todo.map((r) => ({ name: r.name, status: "pending" as const })));
+  if (todo.length === 0) setLog([{ name: "All players already have About info", status: "skipped" }]);
+
+  for (let i = 0; i < todo.length; i++) {
+    const row = todo[i];
+    const title = titles.get(row.slug);
+    const mark = (status: LogEntry["status"], message?: string) =>
+      setLog((prev) => prev.map((e, idx) => (idx === i ? { ...e, status, message } : e)));
+    if (!title) {
+      mark("error", "no Wikipedia title on file");
+      continue;
+    }
+    try {
+      const facts = await fetchWikiPlayerFacts(title);
+      const update: Record<string, unknown> = {
+        about: facts.about,
+        wikiUrl: `https://en.wikipedia.org/wiki/${cleanTitle(title).replace(/ /g, "_")}`,
+      };
+      if (facts.birthPlace) update.birthPlace = facts.birthPlace;
+      if (facts.heightCm) update.heightCm = facts.heightCm;
+      if (facts.careerClubs.length > 0) update.careerClubs = facts.careerClubs;
+      if (facts.international) {
+        const intl: Record<string, unknown> = { team: facts.international.team };
+        if (facts.international.caps !== undefined) intl.caps = facts.international.caps;
+        if (facts.international.goals !== undefined) intl.goals = facts.international.goals;
+        update.international = intl;
+      }
+      await updateDocumentById("players", row.id, update);
+      mark("success");
+    } catch (err) {
+      mark("error", (err as Error).message);
+    }
+    await delay(600);
+  }
+  setBusy(false);
+}
+
+function normName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z\s]/gi, " ")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const STAT_COMPETITIONS = ["PL", "PD", "BL1", "SA", "FL1", "PPL"];
+
+/**
+ * Pulls the real top-scorers tables (goals, assists, matches) from
+ * football-data.org and fills in any player who has no stats yet. It never
+ * overwrites numbers you entered by hand.
+ */
+async function syncLeagueStats(
+  setLog: Dispatch<SetStateAction<LogEntry[]>>,
+  setBusy: Dispatch<SetStateAction<boolean>>
+) {
+  setBusy(true);
+  setLog([]);
+  type Row = { id: string; name: string; position?: string; stats?: Record<string, number>; statsLabel?: string };
+  let rows: Row[] = [];
+  try {
+    rows = await getCollectionDocs<Row>("players", {});
+  } catch (err) {
+    setLog([{ name: "Could not read players", status: "error", message: (err as Error).message }]);
+    setBusy(false);
+    return;
+  }
+  const byName = new Map(rows.map((r) => [normName(r.name), r]));
+  const push = (entry: LogEntry) => setLog((prev) => [...prev, entry]);
+
+  for (const code of STAT_COMPETITIONS) {
+    try {
+      const table = await getTopScorers(code, 100);
+      const start = new Date(table.season.startDate).getFullYear();
+      const end = new Date(table.season.endDate).getFullYear();
+      const label = `${table.competition.name} ${start}-${String(end).slice(2)}`;
+      let updated = 0;
+      for (const sc of table.scorers) {
+        const row = byName.get(normName(sc.player.name));
+        if (!row || row.position === "Goalkeeper") continue;
+        const hasManual = !!row.stats?.appearances && !row.statsLabel;
+        if (hasManual) continue;
+        const stats: Record<string, number> = {
+          appearances: sc.playedMatches ?? 0,
+          goals: sc.goals ?? 0,
+        };
+        if (typeof sc.assists === "number") stats.assists = sc.assists;
+        await updateDocumentById("players", row.id, { stats, statsLabel: label });
+        row.stats = stats;
+        row.statsLabel = label;
+        updated += 1;
+      }
+      push({ name: table.competition.name, status: "success", message: `${updated} players updated` });
+    } catch (err) {
+      push({ name: code, status: "error", message: (err as Error).message });
+    }
+    await delay(7000); // free plan allows 10 requests a minute
+  }
+  setBusy(false);
+}
+
 async function updatePlayerStats(
   updates: PlayerStatUpdate[],
   setLog: Dispatch<SetStateAction<LogEntry[]>>,
@@ -1461,6 +1779,54 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+class NoImageError extends Error {}
+
+/** Seeds hold some titles already URL-encoded (Sadio_Man%C3%A9). Encoding them again broke the lookup. */
+function cleanTitle(title: string): string {
+  try {
+    return decodeURIComponent(title);
+  } catch {
+    return title;
+  }
+}
+
+const LOGO_WORDS = /logo|crest|badge|emblem|wappen|escudo|shield|brasao|stemma|blason|wordmark/i;
+const SKIP_WORDS = /flag|kit_|_kit|stadium|map|icon|banner|symbol_|commons-logo|wikidata|ambox|edit-|question_book|padlock|disambig|portal|nuvola|folder/i;
+
+/**
+ * Second chance when Wikipedia's "page image" is empty (common for clubs
+ * whose logo is a non-free file): list the files used on the page, pick the
+ * crest/logo (or a portrait for players) and ask for a normal-size thumbnail.
+ */
+async function fallbackImageFromPage(title: string, width: number, wantLogo: boolean): Promise<string | null> {
+  const listUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=images&imlimit=60&redirects=1&titles=${encodeURIComponent(
+    cleanTitle(title)
+  )}&origin=*`;
+  const res = await fetch(listUrl);
+  if (!res.ok) return null;
+  const data = await res.json();
+  const files: string[] = (data?.query?.pages?.[0]?.images ?? []).map((i: { title: string }) => i.title);
+  const usable = files.filter((f) => /\.(svg|png|jpe?g|webp)$/i.test(f) && !SKIP_WORDS.test(f));
+  let chosen: string | undefined;
+  if (wantLogo) {
+    chosen = usable.find((f) => LOGO_WORDS.test(f)) ?? usable.find((f) => /\.svg$/i.test(f));
+  } else {
+    const last = cleanTitle(title).replace(/_\(.*\)$/, "").split("_").slice(-1)[0].toLowerCase();
+    chosen =
+      usable.find((f) => /\.jpe?g$/i.test(f) && f.toLowerCase().includes(last)) ??
+      usable.find((f) => /\.jpe?g$/i.test(f));
+  }
+  if (!chosen) return null;
+  const infoUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=imageinfo&iiprop=url&iiurlwidth=${width}&titles=${encodeURIComponent(
+    chosen
+  )}&origin=*`;
+  const infoRes = await fetch(infoUrl);
+  if (!infoRes.ok) return null;
+  const info = await infoRes.json();
+  const ii = info?.query?.pages?.[0]?.imageinfo?.[0];
+  return (ii?.thumburl as string | undefined) ?? (ii?.url as string | undefined) ?? null;
+}
+
 async function getWikipediaImageUrl(
   titleOrTitles: string | string[],
   attempt = 1,
@@ -1468,20 +1834,14 @@ async function getWikipediaImageUrl(
 ): Promise<string> {
   const titles = Array.isArray(titleOrTitles) ? titleOrTitles : [titleOrTitles];
   // Player photos ask for a bigger render of the SAME curated infobox
-  // crop (not the raw lead image, which is often a match action shot,
-  // sometimes with other players in frame, and often cropped oddly).
-  // Logos/crests stay smaller since they're simple graphics.
+  // crop. Logos/crests stay smaller since they're simple graphics.
   const targetWidth = preferOriginal ? 500 : 330;
   let lastError: Error | null = null;
+  let sawNetworkProblem = false;
 
-  for (const title of titles) {
+  for (const raw of titles) {
+    const title = cleanTitle(raw);
     try {
-      // The MediaWiki Action API's pageimages module is the same
-      // engine that picks Wikipedia's infobox thumbnail, but lets us
-      // request an exact pixel width directly - more reliable than
-      // the REST summary endpoint (which sometimes has no image for
-      // pages using certain infobox templates) and it upscales the
-      // curated crop instead of falling back to an uncropped photo.
       const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&prop=pageimages&piprop=thumbnail&pithumbsize=${targetWidth}&redirects=1&titles=${encodeURIComponent(
         title
       )}&origin=*`;
@@ -1490,19 +1850,19 @@ async function getWikipediaImageUrl(
       const data = await res.json();
       const page = data?.query?.pages?.[0];
       const imageUrl = page?.thumbnail?.source;
-      if (!imageUrl) throw new Error(`No image available on Wikipedia for "${title}"`);
-      return imageUrl;
+      if (imageUrl) return imageUrl;
+
+      // Page exists but has no page image: try the page's own file list.
+      const fallback = await fallbackImageFromPage(title, targetWidth, !preferOriginal);
+      if (fallback) return fallback;
+      lastError = new NoImageError(`No image available on Wikipedia for "${title}"`);
     } catch (err) {
+      sawNetworkProblem = true;
       lastError = err as Error;
     }
   }
-  if (attempt < 7) {
-    // Exponential-ish backoff: 1200ms, 2400ms, 3600ms, 4800ms, 6000ms,
-    // 7200ms - widened from the original 5-attempt/900ms version since
-    // large back-to-back batches (18-19 teams in a row for Portugal and
-    // Saudi Pro League) are the ones most likely to hit a sustained
-    // rate limit rather than a one-off blip, and need more total room
-    // to clear before giving up.
+  // Only retry real network trouble. "This page has no image" will not fix itself.
+  if (sawNetworkProblem && attempt < 5) {
     await delay(1200 * attempt);
     return getWikipediaImageUrl(titles, attempt + 1, preferOriginal);
   }
@@ -1628,6 +1988,12 @@ export default function DataImport() {
   const [isUpdatingPlayerStats, setIsUpdatingPlayerStats] = useState(false);
   const [slugFixLog, setSlugFixLog] = useState<LogEntry[]>([]);
   const [isFixingSlugs, setIsFixingSlugs] = useState(false);
+  const [retryLog, setRetryLog] = useState<LogEntry[]>([]);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [enrichLog, setEnrichLog] = useState<LogEntry[]>([]);
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [syncLog, setSyncLog] = useState<LogEntry[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [articleLog, setArticleLog] = useState<LogEntry[]>([]);
   const [isImportingArticles, setIsImportingArticles] = useState(false);
   const [quizLog, setQuizLog] = useState<LogEntry[]>([]);
@@ -1817,27 +2183,40 @@ export default function DataImport() {
           continue;
         }
 
-        const logo = await importWikipediaImage(league.wikiTitle, "dg-tribune/leagues");
+        let logo: CloudinaryUploadResult | null = null;
+        let logoProblem = "";
+        try {
+          logo = await importWikipediaImage(league.wikiTitle, "dg-tribune/leagues");
+        } catch (imgErr) {
+          logoProblem = (imgErr as Error).message;
+        }
 
         await createDocument("leagues", {
           name: league.name,
           slug,
-          logoUrl: logo.url,
+          logoUrl: logo?.url ?? "",
           country: league.country,
           bio: `${league.name} - one of the world's top football competitions.`,
           status: "published",
         });
-        createDocument("media", {
-          url: logo.url,
-          cloudinaryPublicId: logo.publicId,
-          width: logo.width,
-          height: logo.height,
-          uploadedAt: Date.now(),
-          usedIn: [],
-        }).catch(() => {});
+        if (logo) {
+          const saved = logo;
+          createDocument("media", {
+            url: saved.url,
+            cloudinaryPublicId: saved.publicId,
+            width: saved.width,
+            height: saved.height,
+            uploadedAt: Date.now(),
+            usedIn: [],
+          }).catch(() => {});
+        }
 
         setLeagueLog((prev) =>
-          prev.map((e, idx) => (idx === i ? { ...e, status: "success" } : e))
+          prev.map((e, idx) =>
+            idx === i
+              ? { ...e, status: "success", message: logo ? undefined : `added without logo (${logoProblem}). Use "Retry missing images".` }
+              : e
+          )
         );
       } catch (err) {
         setLeagueLog((prev) =>
@@ -1887,31 +2266,53 @@ function getCommonsFileUrl(filename: string, width = 320): string {
           continue;
         }
 
-        const logo = team.commonsFile
-          ? await uploadRemoteImageReliably(getCommonsFileUrl(team.commonsFile), "dg-tribune/teams")
-          : await importWikipediaImage(team.wikiTitle, "dg-tribune/teams");
+        // Try the direct file first, then Wikipedia. If both fail the club is
+        // still added (without a crest) so players can link to it.
+        let logo: CloudinaryUploadResult | null = null;
+        let imageProblem = "";
+        if (team.commonsFile) {
+          try {
+            logo = await uploadRemoteImageReliably(getCommonsFileUrl(team.commonsFile), "dg-tribune/teams");
+          } catch {
+            logo = null;
+          }
+        }
+        if (!logo) {
+          try {
+            logo = await importWikipediaImage(team.wikiTitle, "dg-tribune/teams");
+          } catch (imgErr) {
+            imageProblem = (imgErr as Error).message;
+          }
+        }
 
         await createDocument("teams", {
           name: team.name,
           slug,
-          logoUrl: logo.url,
+          logoUrl: logo?.url ?? "",
           leagueId: league?.id ?? null,
           founded: team.founded ?? null,
           stadium: team.stadium,
           bio: `${team.name} compete in the ${team.leagueName}, playing home matches at ${team.stadium}.`,
           status: "published",
         });
-        createDocument("media", {
-          url: logo.url,
-          cloudinaryPublicId: logo.publicId,
-          width: logo.width,
-          height: logo.height,
-          uploadedAt: Date.now(),
-          usedIn: [],
-        }).catch(() => {});
+        if (logo) {
+          const saved = logo;
+          createDocument("media", {
+            url: saved.url,
+            cloudinaryPublicId: saved.publicId,
+            width: saved.width,
+            height: saved.height,
+            uploadedAt: Date.now(),
+            usedIn: [],
+          }).catch(() => {});
+        }
 
         setLog((prev) =>
-          prev.map((e, idx) => (idx === i ? { ...e, status: "success" } : e))
+          prev.map((e, idx) =>
+            idx === i
+              ? { ...e, status: "success", message: logo ? undefined : `added without crest (${imageProblem}). Use "Retry missing images".` }
+              : e
+          )
         );
       } catch (err) {
         setLog((prev) =>
@@ -1920,7 +2321,7 @@ function getCommonsFileUrl(filename: string, width = 320): string {
           )
         );
       }
-      await delay(1100);
+      await delay(900);
     }
     setIsImporting(false);
   }
@@ -1972,12 +2373,18 @@ function getCommonsFileUrl(filename: string, width = 320): string {
 
         // preferOriginal=true - a clean, full-resolution photo rather
         // than a small blurry thumbnail.
-        const photo = await importWikipediaImage(player.wikiTitle, "dg-tribune/players", true);
+        let photo: CloudinaryUploadResult | null = null;
+        let photoProblem = "";
+        try {
+          photo = await importWikipediaImage(player.wikiTitle, "dg-tribune/players", true);
+        } catch (imgErr) {
+          photoProblem = (imgErr as Error).message;
+        }
 
         await createDocument("players", {
           name: player.name,
           slug,
-          photoUrl: photo.url,
+          photoUrl: photo?.url ?? "",
           position: player.position,
           nationality: player.nationality,
           dateOfBirth: player.dateOfBirth,
@@ -1988,16 +2395,25 @@ function getCommonsFileUrl(filename: string, width = 320): string {
           cleanSheets: player.cleanSheets ?? 0,
           status: "published",
         });
-        createDocument("media", {
-          url: photo.url,
-          cloudinaryPublicId: photo.publicId,
-          width: photo.width,
-          height: photo.height,
-          uploadedAt: Date.now(),
-          usedIn: [],
-        }).catch(() => {});
+        if (photo) {
+          const saved = photo;
+          createDocument("media", {
+            url: saved.url,
+            cloudinaryPublicId: saved.publicId,
+            width: saved.width,
+            height: saved.height,
+            uploadedAt: Date.now(),
+            usedIn: [],
+          }).catch(() => {});
+        }
 
-        setLog((prev) => prev.map((e, idx) => (idx === i ? { ...e, status: "success" } : e)));
+        setLog((prev) =>
+          prev.map((e, idx) =>
+            idx === i
+              ? { ...e, status: "success", message: photo ? undefined : `added without photo (${photoProblem}). Use "Retry missing images".` }
+              : e
+          )
+        );
       } catch (err) {
         setLog((prev) =>
           prev.map((e, idx) =>
@@ -2324,6 +2740,44 @@ function getCommonsFileUrl(filename: string, width = 320): string {
           Import Players (Batch 9)
         </Button>
         <LogList entries={players9Log} />
+      </div>
+
+      <div className="rounded-card border border-border bg-surface p-5 mt-6">
+        <h2 className="font-heading text-card-title text-text mb-1">Step 3r - Retry Missing Images</h2>
+        <p className="text-small text-text-secondary mb-4">
+          Finds every league, club and player that was saved without a picture and tries again using a
+          smarter lookup. Run this after the club imports above, any time. Safe to click repeatedly.
+        </p>
+        <Button onClick={() => retryMissingImages(setRetryLog, setIsRetrying)} isLoading={isRetrying}>
+          Retry Missing Images
+        </Button>
+        <LogList entries={retryLog} />
+      </div>
+
+      <div className="rounded-card border border-border bg-surface p-5 mt-6">
+        <h2 className="font-heading text-card-title text-text mb-1">Step 3s - Enrich Players (About, career, facts)</h2>
+        <p className="text-small text-text-secondary mb-4">
+          For every player already imported, adds a real About text plus birthplace, height, career
+          history and international record, all read from the player's Wikipedia page. Works on players
+          you imported earlier. Only fills players that have no About yet.
+        </p>
+        <Button onClick={() => enrichPlayers(setEnrichLog, setIsEnriching)} isLoading={isEnriching}>
+          Enrich All Players
+        </Button>
+        <LogList entries={enrichLog} />
+      </div>
+
+      <div className="rounded-card border border-border bg-surface p-5 mt-6">
+        <h2 className="font-heading text-card-title text-text mb-1">Step 3t - Sync League Stats (live)</h2>
+        <p className="text-small text-text-secondary mb-4">
+          Pulls the real current-season top-scorer tables (matches, goals, assists) for the Premier League, La Liga,
+          Bundesliga, Serie A, Ligue 1 and Liga Portugal, and fills in any player who has no stats yet. Stats
+          you entered by hand are never overwritten. Takes about a minute.
+        </p>
+        <Button onClick={() => syncLeagueStats(setSyncLog, setIsSyncing)} isLoading={isSyncing}>
+          Sync League Stats
+        </Button>
+        <LogList entries={syncLog} />
       </div>
 
       <div className="rounded-card border border-border bg-surface p-5 mt-6">

@@ -64,7 +64,11 @@ export default function HomePage() {
   const [data, setData] = useState<HomeData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useDocumentHead({ title: "DG Tribune" });
+  useDocumentHead({
+    title: "DG Tribune: Football News, Players, Quizzes, Wallpapers & Tools",
+    description:
+      "DG Tribune is your home for football: daily news, player and team profiles, quizzes, trivia, HD wallpapers, a dream team builder and more.",
+  });
 
   async function load() {
     setError(null);
@@ -270,7 +274,7 @@ export default function HomePage() {
                       {spotlightQuiz.title}
                     </h3>
                     <p className="text-small text-text-secondary mb-4 line-clamp-1">
-                      {spotlightQuiz.questions.length} questions - test your knowledge
+                      Test your knowledge
                     </p>
                     <Link to={ROUTES.quiz(spotlightQuiz.slug)}>
                       <Button size="sm" icon={<Brain className="h-4 w-4" />}>

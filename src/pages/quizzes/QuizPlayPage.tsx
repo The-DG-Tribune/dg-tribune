@@ -138,7 +138,7 @@ export default function QuizPlayPage() {
       setIndex(next);
       setTimeLeft(QUESTION_SECONDS);
       setSelected(null);
-    }, 1100);
+    }, 900);
   }
 
   if (error) {
@@ -199,7 +199,7 @@ export default function QuizPlayPage() {
             </h1>
             <p className="text-small text-text-secondary mb-6">
               {quiz.description ||
-                `${quiz.questions.length} questions - ${QUESTION_SECONDS} seconds each.`}
+                `Quick-fire round. ${QUESTION_SECONDS} seconds a question, faster answers score more.`}
             </p>
             {quiz.playCount > 0 && (
               <p className="mb-6 inline-flex items-center gap-1.5 text-small text-warning">
@@ -230,7 +230,7 @@ export default function QuizPlayPage() {
             <div className="flex justify-center gap-6 mb-6">
               <div>
                 <p className="text-card-title font-heading text-text">
-                  {correctCount}/{total}
+                  {correctCount}
                 </p>
                 <p className="text-caption text-text-secondary">Correct</p>
               </div>
@@ -264,9 +264,7 @@ export default function QuizPlayPage() {
     <Container>
       <div className="max-w-md mx-auto py-8">
         <div className="mb-4 flex items-center justify-between">
-          <Badge>
-            {index + 1} / {deck.length}
-          </Badge>
+          <Badge>Question {index + 1}</Badge>
           <span className="text-small font-semibold text-text tabular-nums">
             {score.toLocaleString()}
           </span>

@@ -13,6 +13,7 @@ import {
   Settings,
   Trash2,
   BarChart3,
+  Tags,
   type LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
@@ -37,6 +38,7 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
   { label: "Teams", href: ROUTES.dashboardTeams, icon: Shield },
   { label: "Leagues", href: ROUTES.dashboardLeagues, icon: Trophy },
   { label: "Wallpapers", href: ROUTES.dashboardWallpapers, icon: Image },
+  { label: "Categories", href: ROUTES.dashboardCategories, icon: Tags },
   { label: "Quizzes", href: ROUTES.dashboardQuizzes, icon: HelpCircle },
   { label: "Tools", href: ROUTES.dashboardTools, icon: Wrench },
   { label: "Homepage Manager", href: ROUTES.dashboardHomepage, icon: Home },

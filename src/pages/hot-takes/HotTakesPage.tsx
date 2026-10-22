@@ -1,3 +1,4 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPortal } from "react-dom";
@@ -71,6 +72,10 @@ function ImageLightbox({ url, onClose }: { url: string | null; onClose: () => vo
 }
 
 export default function HotTakesPage() {
+  useDocumentHead({
+    title: "Football Hot Takes",
+    description: "Short, sharp football hot takes you can read and share as a card.",
+  });
   const { showToast } = useToast();
   const { isLiked, toggleLike } = useHotTakeLikes();
 

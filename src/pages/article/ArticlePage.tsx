@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Eye, Share2 } from "lucide-react";
 import { Container } from "@/components/layout/Container";
+import { ArticleBody } from "@/components/article/ArticleBody";
 import { recordRecentArticle } from "@/utils/recentArticles";
 import { Badge } from "@/components/ui/Badge";
 import { Loader } from "@/components/ui/Loader";
@@ -89,6 +90,20 @@ export default function ArticlePage() {
     title: article?.title ?? "Article",
     description: article?.excerpt,
     image: article?.coverImageUrl,
+    keywords: article?.tags,
+    jsonLd: article
+      ? {
+          "@context": "https://schema.org",
+          "@type": "NewsArticle",
+          headline: article.title,
+          description: article.excerpt,
+          image: article.coverImageUrl ? [article.coverImageUrl] : undefined,
+          author: { "@type": "Person", name: article.authorName || "DG Tribune" },
+          publisher: { "@type": "Organization", name: "DG Tribune", logo: { "@type": "ImageObject", url: "https://dg-tribune.vercel.app/icon-512.png" } },
+          datePublished: new Date(article.createdAt).toISOString(),
+          dateModified: new Date(article.updatedAt).toISOString(),
+        }
+      : undefined,
     type: "article",
   });
 
@@ -228,9 +243,8 @@ export default function ArticlePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="text-body text-text whitespace-pre-wrap leading-relaxed space-y-4"
           >
-            {article.body}
+            <ArticleBody body={article.body} />
           </motion.div>
 
           {article.tags?.length > 0 && (

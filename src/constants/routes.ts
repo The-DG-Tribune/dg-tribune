@@ -33,6 +33,7 @@ export const ROUTES = {
   dashboardArticleNew: "/dashboard/articles/new",
   dashboardArticleEdit: (id: string = ":id") => `/dashboard/articles/${id}/edit`,
   dashboardShortUpdates: "/dashboard/short-updates",
+  dashboardCategories: "/dashboard/categories",
   dashboardPlayers: "/dashboard/players",
   dashboardPlayerNew: "/dashboard/players/new",
   dashboardPlayerEdit: (id: string = ":id") => `/dashboard/players/${id}/edit`,

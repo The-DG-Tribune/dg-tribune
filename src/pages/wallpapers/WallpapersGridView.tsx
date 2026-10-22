@@ -1,4 +1,4 @@
-import { Download, Eye, Heart } from "lucide-react";
+import { Apple, Bot, Download, Eye, Heart } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -71,7 +71,7 @@ export function WallpapersGridView({
         // keeps the wallpaper's real proportions (portrait, landscape,
         // iPad, anything) instead of being force-cropped or squished
         // into one shape.
-        <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 [column-fill:balance]">
+        <div className="columns-2 gap-3 sm:columns-3 sm:gap-4 lg:columns-4 xl:columns-5 [column-fill:balance]">
           {wallpapers.map((wallpaper) => {
             const liked = isLiked(wallpaper.id);
             const category = categoryFor(wallpaper.categoryId);
@@ -87,9 +87,17 @@ export function WallpapersGridView({
                 />
 
                 {category && (
-                  <Badge variant="accent" className="absolute left-2 top-2">
+                  <Badge variant="accent" className="absolute left-2 top-2 max-w-[70%] truncate">
                     {category.name}
                   </Badge>
+                )}
+                {wallpaper.platform && wallpaper.platform !== "all" && (
+                  <span
+                    title={wallpaper.platform === "apple" ? "Made for Apple" : "Made for Android"}
+                    className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-background/70 text-text backdrop-blur-md"
+                  >
+                    {wallpaper.platform === "apple" ? <Apple className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                  </span>
                 )}
 
                 {/* Hover / focus overlay with actions */}

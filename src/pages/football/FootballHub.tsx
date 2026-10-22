@@ -1,3 +1,4 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -31,6 +32,10 @@ const exploreLinks = [
 ];
 
 export default function FootballHub() {
+  useDocumentHead({
+    title: "Football News, Hot Takes & Stories",
+    description: "Latest football news, hot takes and stories from the biggest leagues and tournaments, on DG Tribune.",
+  });
   const [data, setData] = useState<FootballData | null>(null);
   const [error, setError] = useState<string | null>(null);
 

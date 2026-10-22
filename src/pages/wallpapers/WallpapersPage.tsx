@@ -1,6 +1,7 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Heart, LayoutGrid, Monitor, Play, Shuffle, Smartphone } from "lucide-react";
+import { Apple, Bot, Heart, LayoutGrid, Monitor, Play, Shuffle, Smartphone, Tablet } from "lucide-react";
 import { Container } from "@/components/layout/Container";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -16,9 +17,14 @@ import { WallpaperLightbox } from "@/components/wallpapers/WallpaperLightbox";
 import type { Category, Wallpaper } from "@/types/firestore";
 
 type Tab = "grid" | "reels";
-type DeviceFilter = "all" | "phone" | "desktop" | "saved";
+type DeviceFilter = "all" | "phone" | "tablet" | "desktop" | "saved";
+type PlatformFilter = "any" | "apple" | "android";
 
 export default function WallpapersPage() {
+  useDocumentHead({
+    title: "Football Wallpapers for Phone, Tablet & Desktop",
+    description: "Free HD football wallpapers for iPhone, Android, tablet and desktop. Download or browse in full-screen reels.",
+  });
   const { showToast } = useToast();
   const { isLiked, toggleLike } = useWallpaperLikes();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -39,6 +45,7 @@ export default function WallpapersPage() {
   const [error, setError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Wallpaper | null>(null);
   const [deviceFilter, setDeviceFilter] = useState<DeviceFilter>("all");
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("any");
 
   async function load() {
     setError(null);
@@ -106,13 +113,18 @@ export default function WallpapersPage() {
   }
 
   const hasDesktop = wallpapers?.some((w) => w.orientation === "desktop") ?? false;
+  const hasTablet = wallpapers?.some((w) => w.orientation === "tablet" || w.orientation === "square") ?? false;
+  const hasPlatforms = wallpapers?.some((w) => w.platform === "apple" || w.platform === "android") ?? false;
   const filteredWallpapers =
     wallpapers?.filter((w) => {
       if (activeCategoryId !== "all" && w.categoryId !== activeCategoryId) return false;
       if (deviceFilter === "saved") return isLiked(w.id);
+      if (platformFilter === "apple" && w.platform === "android") return false;
+      if (platformFilter === "android" && w.platform === "apple") return false;
       if (deviceFilter === "desktop") return w.orientation === "desktop";
+      if (deviceFilter === "tablet") return w.orientation === "tablet" || w.orientation === "square";
       // Older wallpapers have no orientation and were all phone-sized.
-      if (deviceFilter === "phone") return w.orientation !== "desktop";
+      if (deviceFilter === "phone") return !w.orientation || w.orientation === "phone";
       return true;
     }) ?? [];
 
@@ -134,7 +146,7 @@ export default function WallpapersPage() {
     <Container>
       <div className="py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h1 className="font-heading text-page-title text-text mb-1">Wallpapers</h1>
             <p className="text-body text-text-secondary">
               High-quality wallpapers, ready to download. New drops added regularly.
@@ -180,10 +192,11 @@ export default function WallpapersPage() {
         </div>
 
         {tab === "grid" && wallpapers !== null && (
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {([
               { id: "all", label: "All", icon: null },
               { id: "phone", label: "Phone", icon: Smartphone },
+              ...(hasTablet ? [{ id: "tablet", label: "Tablet", icon: Tablet }] : []),
               ...(hasDesktop ? [{ id: "desktop", label: "Desktop", icon: Monitor }] : []),
               { id: "saved", label: "Saved", icon: Heart },
             ] as { id: DeviceFilter; label: string; icon: typeof Heart | null }[]).map((f) => (
@@ -192,7 +205,7 @@ export default function WallpapersPage() {
                 type="button"
                 onClick={() => setDeviceFilter(f.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full border px-4 py-2 text-small font-medium transition-colors duration-button",
+                  "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-small font-medium transition-colors duration-button",
                   deviceFilter === f.id
                     ? "border-accent bg-accent/10 text-accent"
                     : "border-white/10 bg-white/[0.04] text-text-secondary hover:text-text"
@@ -202,6 +215,30 @@ export default function WallpapersPage() {
                 {f.label}
               </button>
             ))}
+            {hasPlatforms && (
+              <>
+                <span className="mx-1 my-1 w-px shrink-0 bg-white/10" aria-hidden="true" />
+                {([
+                  { id: "apple", label: "Apple", icon: Apple },
+                  { id: "android", label: "Android", icon: Bot },
+                ] as { id: PlatformFilter; label: string; icon: typeof Apple }[]).map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setPlatformFilter((cur) => (cur === f.id ? "any" : f.id))}
+                    className={cn(
+                      "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-small font-medium transition-colors duration-button",
+                      platformFilter === f.id
+                        ? "border-accent-secondary bg-accent-secondary/10 text-accent-secondary"
+                        : "border-white/10 bg-white/[0.04] text-text-secondary hover:text-text"
+                    )}
+                  >
+                    <f.icon className="h-4 w-4" />
+                    {f.label}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         )}
 

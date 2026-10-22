@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Pencil, Trash2, Download, Heart, Images } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Pencil, Trash2, Download, Heart, Images, Apple, Bot, Sparkles, Tags } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -22,6 +23,21 @@ import {
   softDeleteDocument,
 } from "@/services/firebase/firestore";
 import { slugify } from "@/utils/slugify";
+import { detectDevice, dgName, highestDgNumber, isGenericTitle, uniqueSlug, type DeviceType, type PlatformType } from "@/utils/wallpaperSmart";
+import { ROUTES } from "@/constants/routes";
+
+const DEVICE_OPTIONS: { label: string; value: DeviceType }[] = [
+  { label: "Phone", value: "phone" },
+  { label: "Tablet", value: "tablet" },
+  { label: "Desktop", value: "desktop" },
+  { label: "Square", value: "square" },
+];
+
+const PLATFORM_OPTIONS: { label: string; value: PlatformType }[] = [
+  { label: "Any device", value: "all" },
+  { label: "Apple (iPhone / iPad)", value: "apple" },
+  { label: "Android", value: "android" },
+];
 
 const STATUS_OPTIONS: { label: string; value: ContentStatus }[] = [
   { label: "Draft", value: "draft" },
@@ -45,6 +61,9 @@ export default function WallpapersList() {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [device, setDevice] = useState<DeviceType>("phone");
+  const [platform, setPlatform] = useState<PlatformType>("all");
+  const [isNaming, setIsNaming] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<Wallpaper | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -72,6 +91,8 @@ export default function WallpapersList() {
     setImageUrl(null);
     setCategoryId("");
     setStatus("published");
+    setDevice("phone");
+    setPlatform("all");
     setIsModalOpen(true);
   }
 
@@ -81,7 +102,44 @@ export default function WallpapersList() {
     setImageUrl(wallpaper.imageUrl);
     setCategoryId(wallpaper.categoryId ?? "");
     setStatus(wallpaper.status);
+    setDevice((wallpaper.orientation as DeviceType) ?? "phone");
+    setPlatform(wallpaper.platform ?? "all");
     setIsModalOpen(true);
+  }
+
+  // For a brand-new upload, guess phone / tablet / desktop from the real picture size.
+  useEffect(() => {
+    if (!imageUrl || editing) return;
+    const img = new Image();
+    img.onload = () => setDevice(detectDevice(img.naturalWidth, img.naturalHeight, null));
+    img.src = imageUrl;
+  }, [imageUrl, editing]);
+
+  async function handleAutoName() {
+    if (!wallpapers) return;
+    const targets = wallpapers.filter((w) => isGenericTitle(w.title));
+    if (targets.length === 0) {
+      showToast("Every wallpaper already has a proper name");
+      return;
+    }
+    setIsNaming(true);
+    try {
+      const used = new Set(wallpapers.map((w) => w.slug));
+      let n = highestDgNumber(wallpapers.map((w) => w.slug));
+      for (const w of targets) {
+        n += 1;
+        const catName = categories.find((c) => c.id === w.categoryId)?.name ?? null;
+        const title = dgName(`${w.id}`, catName, n);
+        const slug = uniqueSlug(slugify(title), used);
+        await updateDocumentById("wallpapers", w.id, { title, slug });
+      }
+      showToast(`${targets.length} wallpapers renamed`);
+      load();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setIsNaming(false);
+    }
   }
 
   async function handleAddCategory() {
@@ -109,6 +167,8 @@ export default function WallpapersList() {
         status,
         downloadCount: editing?.downloadCount ?? 0,
         likeCount: editing?.likeCount ?? 0,
+        orientation: device,
+        platform,
       };
 
       if (editing) {
@@ -151,6 +211,16 @@ export default function WallpapersList() {
           <h1 className="font-heading text-page-title text-text">Wallpapers</h1>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link to={ROUTES.dashboardCategories}>
+            <Button variant="secondary" type="button">
+              <Tags className="h-4 w-4 mr-1.5" />
+              Categories
+            </Button>
+          </Link>
+          <Button variant="secondary" onClick={handleAutoName} isLoading={isNaming}>
+            <Sparkles className="h-4 w-4 mr-1.5" />
+            Name untitled
+          </Button>
           <Button variant="secondary" onClick={() => setIsBulkOpen(true)}>
             <Images className="h-4 w-4 mr-1.5" />
             Bulk Upload
@@ -182,7 +252,7 @@ export default function WallpapersList() {
           {wallpapers.map((wallpaper) => (
             <div
               key={wallpaper.id}
-              className="group relative overflow-hidden rounded-card border border-border bg-surface"
+              className="group relative min-w-0 overflow-hidden rounded-card border border-border bg-surface"
             >
               <div className="aspect-[9/16] w-full bg-background">
                 <img
@@ -195,24 +265,30 @@ export default function WallpapersList() {
                 <p className="truncate text-small font-medium text-text">
                   {wallpaper.title}
                 </p>
-                <div className="mt-1 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Badge variant={wallpaper.status === "published" ? "accent" : "warning"}>
-                      {wallpaper.status}
-                    </Badge>
-                    {wallpaper.orientation && wallpaper.orientation !== "phone" && (
-                      <Badge variant="info">{wallpaper.orientation}</Badge>
-                    )}
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <Badge variant={wallpaper.status === "published" ? "accent" : "warning"}>
+                    {wallpaper.status}
+                  </Badge>
+                  {wallpaper.orientation && wallpaper.orientation !== "phone" && (
+                    <Badge variant="info">{wallpaper.orientation}</Badge>
+                  )}
+                  {wallpaper.platform && wallpaper.platform !== "all" && (
+                    <span
+                      title={wallpaper.platform === "apple" ? "Apple" : "Android"}
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-text"
+                    >
+                      {wallpaper.platform === "apple" ? <Apple className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1.5 flex items-center gap-3 text-caption text-text-secondary">
+                  <span className="inline-flex items-center gap-1">
+                    <Heart className="h-3 w-3" />
+                    {wallpaper.likeCount ?? 0}
                   </span>
-                  <span className="inline-flex items-center gap-2 text-caption text-text-secondary">
-                    <span className="inline-flex items-center gap-1">
-                      <Heart className="h-3 w-3" />
-                      {wallpaper.likeCount ?? 0}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Download className="h-3 w-3" />
-                      {wallpaper.downloadCount}
-                    </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Download className="h-3 w-3" />
+                    {wallpaper.downloadCount}
                   </span>
                 </div>
               </div>
@@ -296,6 +372,21 @@ export default function WallpapersList() {
                 options={categories.map((c) => ({ label: c.name, value: c.id }))}
               />
             )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Dropdown
+              label="Device"
+              value={device}
+              onChange={(v) => setDevice(v as DeviceType)}
+              options={DEVICE_OPTIONS}
+            />
+            <Dropdown
+              label="Made for"
+              value={platform}
+              onChange={(v) => setPlatform(v as PlatformType)}
+              options={PLATFORM_OPTIONS}
+            />
           </div>
 
           <Dropdown

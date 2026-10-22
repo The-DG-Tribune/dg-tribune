@@ -49,6 +49,16 @@ export interface Player extends BaseDocument {
   /** Only meaningful for goalkeepers - kept separate from `stats`
    * since it's the one metric outfield players don't have. */
   cleanSheets?: number;
+  /** Longer "about" text (from Wikipedia), shown on the profile. */
+  about?: string;
+  wikiUrl?: string;
+  birthPlace?: string;
+  heightCm?: number;
+  /** Senior career rows from Wikipedia's infobox (club, years, league-and-cup apps and goals). */
+  careerClubs?: { club: string; years: string; apps?: number; goals?: number }[];
+  international?: { team: string; caps?: number; goals?: number };
+  /** What the numbers in `stats` cover, e.g. "Premier League 2025-26". */
+  statsLabel?: string;
 }
 
 export interface Team extends BaseDocument {
@@ -82,7 +92,9 @@ export interface Wallpaper extends BaseDocument {
   /** Pixel size and device type, filled in by Bulk Upload. Older wallpapers don't have these. */
   width?: number;
   height?: number;
-  orientation?: "phone" | "desktop" | "square";
+  orientation?: "phone" | "tablet" | "desktop" | "square";
+  /** Which kind of device it was made for. Missing or "all" means it works anywhere. */
+  platform?: "all" | "apple" | "android";
 }
 
 export interface QuizQuestion {

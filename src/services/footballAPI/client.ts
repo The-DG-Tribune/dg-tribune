@@ -100,3 +100,22 @@ export async function getCompetitionMatches(competitionCode: string) {
 export async function getCompetitionStandings(competitionCode: string) {
   return request(`/competitions/${competitionCode}/standings`);
 }
+
+export interface TopScorer {
+  player: { id: number; name: string };
+  team: { name: string };
+  playedMatches: number | null;
+  goals: number | null;
+  assists: number | null;
+}
+
+export interface TopScorersResponse {
+  competition: { name: string; code: string };
+  season: { startDate: string; endDate: string };
+  scorers: TopScorer[];
+}
+
+/** Top scorers table for a competition (real, current-season numbers). */
+export async function getTopScorers(competitionCode: string, limit = 100): Promise<TopScorersResponse> {
+  return request<TopScorersResponse>(`/competitions/${competitionCode}/scorers?limit=${limit}`);
+}
