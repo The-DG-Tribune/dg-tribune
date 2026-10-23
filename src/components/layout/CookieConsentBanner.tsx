@@ -37,6 +37,7 @@ export function CookieConsentBanner() {
     } catch {
       // ignore - if storage is blocked, just hide the banner for this session
     }
+    window.dispatchEvent(new Event("dg-consent-change"));
     setVisible(false);
   }
 
@@ -51,8 +52,8 @@ export function CookieConsentBanner() {
           </span>
           <p className="text-small text-text-secondary">
             We use essential cookies to keep you signed in. With your
-            permission, we'd also like to use analytics cookies to
-            understand how the site is used.
+            permission, we'd also like to use analytics and advertising
+            cookies to understand how the site is used and keep it free.
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
