@@ -6,7 +6,7 @@
  * AdManager (src/components/ads/AdManager.tsx) does the loading.
  */
 
-export type AdTagId = "vignette" | "inpush" | "onclick";
+export type AdTagId = "vignette" | "inpush" | "inpush2";
 
 export interface AdTagConfig {
   src: string;
@@ -14,6 +14,8 @@ export interface AdTagConfig {
   zone?: string;
   /** "dataset" = zone in data-zone. "script" = zone is already in the URL. */
   mode: "dataset" | "script";
+  /** Extra wait (ms) after the page delay, so two cards never appear together. */
+  extraDelayMs?: number;
 }
 
 export const AD_TAGS: Record<AdTagId, AdTagConfig> = {
@@ -28,12 +30,13 @@ export const AD_TAGS: Record<AdTagId, AdTagConfig> = {
     src: "https://5gvci.com/act/files/tag.min.js?z=12100510",
     mode: "script",
   },
-  // Third tag (zone 12100513). Standard Monetag "tag.min.js" format,
-  // kept on only the highest-intent pages.
-  onclick: {
+  // Second in-page push zone (12100513). Starts later than the first so
+  // the two cards never appear on screen at the same moment.
+  inpush2: {
     src: "https://nap5k.com/tag.min.js",
     zone: "12100513",
     mode: "dataset",
+    extraDelayMs: 18000,
   },
 };
 
@@ -68,24 +71,24 @@ export function adsForPath(pathname: string): AdTagId[] {
   const p = clean(pathname);
   if (isAdFreeZone(p)) return [];
 
-  // Blog posts: best earners, so all three formats.
-  if (p.startsWith("/article/")) return ["vignette", "inpush", "onclick"];
+  // Blog posts: best earners, so every format.
+  if (p.startsWith("/article/")) return ["vignette", "inpush", "inpush2"];
 
-  // Player, team and league profiles: long reads, banner + in-page push.
-  if (/^\/(player|team|league)\//.test(p)) return ["vignette", "inpush"];
+  // Profiles and news feeds: long reads, banner + both push zones.
+  if (/^\/(player|team|league)\//.test(p)) return ["vignette", "inpush", "inpush2"];
+  if (p === "/football" || p === "/hot-takes") return ["vignette", "inpush", "inpush2"];
 
-  // News feeds.
-  if (p === "/football" || p === "/hot-takes") return ["vignette", "inpush"];
+  // Wallpapers: people come to download and browse for a long time.
+  if (p === "/wallpapers") return ["inpush", "inpush2"];
 
-  // Wallpapers: people come to download, so higher-intent formats.
-  if (p === "/wallpapers") return ["inpush", "onclick"];
-
-  // Gentle pages: in-page push only (small, never blocks anything).
-  if (p === "/") return ["inpush"];
+  // Home and list pages.
+  if (p === "/") return ["inpush", "inpush2"];
   if (["/players", "/teams", "/leagues", "/search", "/tools"].includes(p)) {
-    return ["inpush"];
+    return ["inpush", "inpush2"];
   }
-  if (p.startsWith("/tools/")) return ["inpush"]; // Dream Team Builder etc.
+
+  // Tools (Dream Team Builder, Formation Builder, predictors...).
+  if (p.startsWith("/tools/")) return ["inpush", "inpush2"];
 
   // Legal, contact, 404, anything else: no ads.
   return [];

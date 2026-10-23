@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { getCookieConsent } from "@/components/layout/CookieConsentBanner";
 import {
   AD_START_DELAY_MS,
   AD_TAGS,
@@ -34,7 +33,7 @@ function startTag(id: AdTagId) {
 /**
  * AdManager - starts each ad tag only on the pages that allow it.
  *
- * - Waits for the visitor's cookie choice ("Accept all") before loading.
+ * - Runs for every visitor (disclosed in the notice and Privacy Policy).
  * - Never runs on quizzes/quiz tools, the dashboard or the admin login.
  * - Ad scripts cannot be removed once started, so if a visitor who has
  *   seen ads opens a quiz (or leaves the public site), the page reloads
@@ -42,29 +41,22 @@ function startTag(id: AdTagId) {
  */
 export function AdManager() {
   const { pathname } = useLocation();
-  const [consent, setConsent] = useState(() => getCookieConsent());
-
-  useEffect(() => {
-    const refresh = () => setConsent(getCookieConsent());
-    window.addEventListener("dg-consent-change", refresh);
-    window.addEventListener("storage", refresh);
-    return () => {
-      window.removeEventListener("dg-consent-change", refresh);
-      window.removeEventListener("storage", refresh);
-    };
-  }, []);
 
   useEffect(() => {
     if (isAdFreeZone(pathname)) {
       if (started.size > 0) window.location.reload();
       return;
     }
-    if (consent !== "accepted") return;
     const wanted = adsForPath(pathname).filter((id) => !started.has(id));
     if (wanted.length === 0) return;
-    const timer = window.setTimeout(() => wanted.forEach(startTag), AD_START_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [pathname, consent]);
+    const timers = wanted.map((id) =>
+      window.setTimeout(
+        () => startTag(id),
+        AD_START_DELAY_MS + (AD_TAGS[id].extraDelayMs ?? 0),
+      ),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [pathname]);
 
   // Leaving the public site (e.g. to the dashboard) clears ads with a reload.
   useEffect(() => {

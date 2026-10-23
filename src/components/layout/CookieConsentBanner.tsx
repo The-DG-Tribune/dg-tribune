@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Cookie } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { ROUTES } from "@/constants/routes";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 const STORAGE_KEY = "dg-tribune-cookie-consent";
@@ -37,8 +39,7 @@ export function CookieConsentBanner() {
     } catch {
       // ignore - if storage is blocked, just hide the banner for this session
     }
-    window.dispatchEvent(new Event("dg-consent-change"));
-    setVisible(false);
+        setVisible(false);
   }
 
   if (!visible) return null;
@@ -51,17 +52,18 @@ export function CookieConsentBanner() {
             <Cookie className="h-4 w-4" />
           </span>
           <p className="text-small text-text-secondary">
-            We use essential cookies to keep you signed in. With your
-            permission, we'd also like to use analytics and advertising
-            cookies to understand how the site is used and keep it free.
+            DG Tribune is free thanks to ads. We and our advertising
+            partners use cookies to show ads and understand how the site
+            is used. Read how in our{" "}
+            <Link to={ROUTES.privacy} className="text-accent underline">
+              Privacy Policy
+            </Link>
+            .
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button variant="secondary" size="sm" onClick={() => choose("essential-only")}>
-            Essential only
-          </Button>
           <Button size="sm" onClick={() => choose("accepted")}>
-            Accept all
+            Got it
           </Button>
         </div>
       </GlassCard>
